@@ -1,43 +1,41 @@
-from typing import Generator, Tuple
+from typing import Generator, Tuple, Union
 
-import requests
 import socket
 import select
 
 SSDP_ST = "nanoleaf_aurora:light"
+Socket = socket.socket
 
 
-def _parse_aurora_from_response(response):
+def _parse_aurora_from_response(response: str) -> Union[str, None]:
     if response is None or SSDP_ST not in response:
         return
     for line in response.split("\n"):
         if "Location:" not in line:
             continue
-        new_location = line.replace("Location:", "").strip() \
-            .replace("http://", "") \
-            .replace(":16021", "")
+        new_location = line.replace("Location:", "").strip().replace("http://", "").replace(":16021", "")
         return new_location
 
 
-def _get_deviceid_from_response(response):
+def _get_deviceid_from_response(response: str) -> str:
     for line in response.split("\n"):
         if "deviceid:" not in line:
             continue
         return line.replace("nl-deviceid:", "").strip()
 
 
-def _get_response(sock):
+def _get_response(sock: Socket) -> str:
     try:
         ready = select.select([sock], [], [], 5)
         if ready[0]:
             response = sock.recv(1024).decode("utf-8")
             return response
-    except socket.error as err:
+    except socket.error:
         sock.close()
         raise
 
 
-def _prepare_socket():
+def _prepare_socket() -> Socket:
     SSDP_IP = "239.255.255.250"
     SSDP_PORT = 1900
     SSDP_MX = 3
@@ -72,4 +70,3 @@ def find_aurora_addresses(search_for_amount: int = 10) -> Generator[Tuple[str, s
         yield aurora, _get_deviceid_from_response(response)
 
     return
-
