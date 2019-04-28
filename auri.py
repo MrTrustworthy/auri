@@ -7,7 +7,7 @@ from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
 from auri.aurora_finder import find_aurora_addresses
 from auri.config import get_leaf_by_name_or_default, aurora_name_if_already_configured, get_configured_leafs, \
-    add_aurora_to_config, CONF_PATH, is_default, set_active
+    add_aurora_to_config, CONF_PATH, is_default, set_active, save_images
 
 
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
@@ -125,6 +125,14 @@ def set(name: str, aurora: str, verbose: bool):
     click.echo(f"Set current effect to {effect_name}")
 
 
+@effects.command(name="get")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def get_command(aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    click.echo(aurora.get_active_effect())
+
+
 @effects.command(name="list")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-n", "--names", is_flag=True, default=False, help="Only prints the effect names and exits")
@@ -142,6 +150,14 @@ def list_effects_command(aurora: str, names: bool, verbose: bool):
         # pretty printing with effect colors and active marker
         active = "[X]" if active_effect == effect.name else "[ ]"
         click.echo(f"{active} {effect.to_terminal()}")
+
+
+@effects.command()
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def imagegen(aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    save_images(aurora)
 
 
 @effects.command()

@@ -1,6 +1,10 @@
 from colorsys import hsv_to_rgb
 from typing import Any, Dict
 
+from PIL import Image, ImageDraw
+
+IMAGE_SIZE = 64
+
 
 class EffectColor:
     def __init__(self, data: Dict[str, int]):
@@ -13,11 +17,12 @@ class EffectColor:
     def rgb(self):
         h, s, v = self.hue / 360, self.saturation / 100, self.brightness / 100
         rgb = hsv_to_rgb(h, s, v)
-        return list(map(lambda x: min(5, int(x * 6)), rgb))  # scale is [0-5], this scaling looks the most accurate
+        return rgb
 
     @property
     def termcode_number(self):
-        r, g, b = self.rgb
+        # scale must be [0-5], this scaling looks the most accurate
+        r, g, b = list(map(lambda x: min(5, int(x * 6)), self.rgb))
         number = 16 + 36 * r + 6 * g + b  # https://stackoverflow.com/a/27165165/2683726
         return number
 
@@ -37,3 +42,13 @@ class Effect:
 
     def to_terminal(self):
         return f"{self.name}: {''.join(c.termcode for c in self.palette)}"
+
+    def to_image(self):
+        image = Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE))
+        draw = ImageDraw.Draw(image)
+        spacing = int(IMAGE_SIZE / len(self.palette))
+        for i, color in enumerate(self.palette):
+            rect = [i * spacing, 0, (i + 1) * spacing, IMAGE_SIZE]
+            draw_color = tuple(map(lambda c: int(c * 255), color.rgb))
+            draw.rectangle(rect, fill=draw_color)
+        return image

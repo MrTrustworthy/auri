@@ -394,12 +394,11 @@ class Aurora(object):
         data = {"select": effect_name}
         self.__command("put", "effects", data=data)
 
-
     def get_effects(self) -> List[Effect]:
         data = {"write": {"command": "requestAll"}}
         effect_data = self.__command("put", "effects", data=data)
         animation_data = effect_data.get("animations", [])
-        return [Effect(data) for data in animation_data]
+        return sorted((Effect(data) for data in animation_data), key=lambda e: e.name)
 
     def get_effect_names(self) -> List[str]:
         return [e.name for e in self.get_effects()]
@@ -414,14 +413,6 @@ class Aurora(object):
     ###########################################
     # Effect methods
     ###########################################
-
-
-
-
-
-
-
-
 
     @property
     def effects_list(self):
@@ -440,16 +431,11 @@ class Aurora(object):
         self.effect = new_effect
         return new_effect
 
-
-
     def effect_details(self, name: str) -> dict:
         """Returns the dict containing details for the effect specified"""
         data = {"write": {"command": "request",
                           "animName": name}}
         return self.__command("put", "effects", data=data)
-
-
-
 
     def effect_delete(self, name: str):
         """Removed the specified effect from the device"""

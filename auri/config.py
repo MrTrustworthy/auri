@@ -35,6 +35,7 @@ config_schema = {
 }
 
 CONF_PATH = expanduser("~/.config/auri/config.json")
+IMAGE_PATH = expanduser("~/.config/auri")
 
 
 # TODO handle duplicated names
@@ -130,6 +131,12 @@ def add_aurora_to_config(aurora: Aurora, verbose: bool = False):
 
 
 # Loading and retrieving configurations for commands that affect 1 Aurora
+
+def save_images(aurora: Aurora):
+    for effect in aurora.get_effects():
+        image = effect.to_image()
+        image.save(os.path.join(IMAGE_PATH, f"img_{aurora.name}_{effect.name}.jpg"))
+
 
 def is_default(aurora: Aurora, verbose: bool = False) -> bool:
     for ip, data in _load_config(verbose=verbose).items():
