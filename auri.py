@@ -7,7 +7,7 @@ from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
 from auri.aurora_finder import find_aurora_addresses
 from auri.config import get_leaf_by_name_or_default, aurora_name_if_already_configured, get_configured_leafs, \
-    add_aurora_to_config, CONF_PATH, is_default
+    add_aurora_to_config, CONF_PATH, is_default, set_active
 
 
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
@@ -20,15 +20,14 @@ def cli():
 
 
 @cli.command()
-@click.option("-o", "--option", default="info", show_default=True,
-              help="Generic info endpoint")
+@click.argument("option", default="info")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def query(option, aurora, verbose):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     try:
         result = getattr(aurora, option)
-        click.echo(f"Result of 'show {option}': {result}")
+        click.echo(str(result))
     except AttributeError:
         click.echo(f"Operator '{option}' doesn't exist")
 
@@ -40,6 +39,13 @@ def list(verbose):
         default = " [DEFAULT]" if is_default(aurora, verbose=verbose) else ""
         click.echo(f"{str(aurora)}{default}")
 
+
+@cli.command()
+@click.argument("name")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def activate(name: str, verbose: bool):
+    set_active(name, verbose=verbose)
+    click.echo(f"Set {name} as active Aurora")
 
 @cli.command()
 @click.option("-a", "--amount", default=1, show_default=True,

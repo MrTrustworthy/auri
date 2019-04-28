@@ -17,7 +17,7 @@ from auri.aurora import Aurora
 # }
 # But an empty dict {} is also valid for first setups
 AuroraConf = Dict[str, Union[str, bool]]
-LeafConfig = Dict[str, AuroraConf]
+AuroraConfigs = Dict[str, AuroraConf]
 config_schema = {
     "type": "object",
     "patternProperties": {
@@ -59,7 +59,7 @@ def _load_config(verbose: bool = False):
     return config
 
 
-def _save_config(config: LeafConfig, verbose: bool = False):
+def _save_config(config: AuroraConfigs, verbose: bool = False):
     _ensure_valid_config(config, verbose=verbose)
     os.makedirs(os.path.dirname(CONF_PATH), exist_ok=True)  # On first run, make sure the path exists
     with open(CONF_PATH, "w+") as outfile:
@@ -84,15 +84,27 @@ def _ensure_valid_defaults(config, verbose: bool = False):
     click.echo(f"There are {default_auroras} default Auroras, "
                "repairing config automatically now to ensure exactly 1 Aurora is default")
 
-    for ip, data in config.items():
-        data["default"] = False
+    _clear_all_defaults(config)
 
     for ip, data in config.items():
         data["default"] = True
         return
 
+def _clear_all_defaults(config: AuroraConfigs):
+    for ip, data in config.items():
+        data["default"] = False
 
 # Loading and retrieving configurations for commands that affect multiple Auroras
+
+def set_active(name: str, verbose: bool = False):
+    configs = _load_config(verbose=verbose)
+    for ip, data in configs.items():
+        if data["name"] != name:
+            continue
+        data["default"] = True
+        _save_config(configs, verbose=verbose)
+        return
+    raise ConfigException(f"No Aurora with name {name} was found, could not set it active. Reverting")
 
 
 def get_configured_leafs() -> List[Aurora]:
