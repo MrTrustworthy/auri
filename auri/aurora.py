@@ -385,16 +385,40 @@ class Aurora(object):
 
     _reserved_effect_names = ["*Static*", "*Dynamic*", "*Solid*"]
 
-    @property
-    def effect(self):
+    def get_active_effect(self):
         """Returns the active effect"""
         return self.__command("get", "effects/select")
 
-    @effect.setter
-    def effect(self, effect_name: str):
+    def set_active_effect(self, effect_name: str):
         """Sets the active effect to the name specified"""
         data = {"select": effect_name}
         self.__command("put", "effects", data=data)
+
+
+    def get_effects(self) -> List[Effect]:
+        data = {"write": {"command": "requestAll"}}
+        effect_data = self.__command("put", "effects", data=data)
+        animation_Data = effect_data.get("animations", [])
+        return [Effect(data) for data in animation_Data]
+
+    def set_raw_effect_data(self, effect_data: dict):
+        """Sends a raw dict containing effect data to the device.
+
+        The dict given must match the json structure specified in the API docs."""
+        data = {"write": effect_data}
+        self.__command("put", "effects", data=data)
+
+    ###########################################
+    # Effect methods
+    ###########################################
+
+
+
+
+
+
+
+
 
     @property
     def effects_list(self):
@@ -413,12 +437,7 @@ class Aurora(object):
         self.effect = new_effect
         return new_effect
 
-    def effect_set_raw(self, effect_data: dict):
-        """Sends a raw dict containing effect data to the device.
 
-        The dict given must match the json structure specified in the API docs."""
-        data = {"write": effect_data}
-        self.__command("put", "effects", data=data)
 
     def effect_details(self, name: str) -> dict:
         """Returns the dict containing details for the effect specified"""
@@ -427,17 +446,7 @@ class Aurora(object):
         return self.__command("put", "effects", data=data)
 
 
-    def get_effects_details(self) -> dict:
-        """Returns a dict containing details for all effects on the device"""
-        data = {"write": {"command": "requestAll"}}
-        return self.__command("put", "effects", data=data)
 
-
-    def get_effects(self) -> List[Effect]:
-        return [Effect(data) for data in self.get_animations()]
-
-    def get_animations(self) -> dict:
-        return self.get_effects_details().get("animations", [])
 
     def effect_delete(self, name: str):
         """Removed the specified effect from the device"""

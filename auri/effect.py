@@ -13,7 +13,7 @@ class EffectColor:
     def rgb(self):
         h, s, v = self.hue / 360, self.saturation / 100, self.brightness / 100
         rgb = hsv_to_rgb(h, s, v)
-        return list(map(lambda x: min(5, int(x * 6)), rgb))  # scale is [0-1]
+        return list(map(lambda x: min(5, int(x * 6)), rgb))  # scale is [0-5], this scaling looks the most accurate
 
     @property
     def termcode_number(self):

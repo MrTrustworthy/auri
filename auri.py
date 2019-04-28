@@ -40,13 +40,28 @@ def list(verbose: bool):
         click.echo(f"{str(aurora)}{default}")
 
 
-@cli.command()
+@cli.group()
+def effects():
+    pass
+
+
+@effects.command()
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects(aurora: str, verbose: bool):
+def list(aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    active_effect = aurora.get_active_effect()
     for effect in aurora.get_effects():
-        click.echo(effect.to_terminal())
+        active = "[X]" if active_effect == effect.name else "[ ]"
+        click.echo(f"{active} {effect.to_terminal()}")
+
+@effects.command()
+@click.argument("name", nargs=-1)
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def set(name: str, aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora.set_active_effect(" ".join(name))
 
 
 @cli.command()

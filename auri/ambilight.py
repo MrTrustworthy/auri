@@ -42,7 +42,7 @@ def set_effect_to_current_screen_colors(aurora: Aurora, quantization: int, top: 
     assert quantization >= top, f"Quantization ({quantization}) must be at least as big as Top ({top})!"
     colors = _get_current_display_image_colors(quantization, top)
     effect_data = _render_effect_template(colors)
-    aurora.effect_set_raw(effect_data)
+    aurora.set_raw_effect_data(effect_data)
 
 
 def _get_current_display_image_colors(quantization: int, top: int) -> List[Color]:
