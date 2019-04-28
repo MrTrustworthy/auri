@@ -31,11 +31,6 @@ class EffectColor:
     def termcode(self):
         return f'\033[48;5;{self.termcode_number}m{self.termcode_text}\033[0m'
 
-    @property
-    def details(self):
-        return f"RGB: {self.rgb}, Number: {self.termcode_number}, Code: {self.termcode}"
-
-
 class Effect:
     def __init__(self, effect_data: Dict[str, Any]):
         self.name = effect_data["animName"]
@@ -43,7 +38,6 @@ class Effect:
 
     def to_terminal(self):
         color_cycle = [c.termcode for c in self.palette] * FLAG_TILES
-
         flag = ''.join(color_cycle[:FLAG_TILES])
         return f"{flag} {self.name} "
 

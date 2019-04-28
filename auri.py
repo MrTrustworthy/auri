@@ -53,6 +53,8 @@ def query(option: str, aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     try:
         result = getattr(aurora, option)
+        if callable(result):
+            result = result()
         click.echo(str(result))
     except AttributeError:
         click.echo(f"Operator '{option}' doesn't exist")
@@ -155,7 +157,7 @@ def delete_effect(name: str, aurora: str, verbose: bool):
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def get_command(aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
-    click.echo(aurora.get_active_effect())
+    click.echo(aurora.get_active_effect_name())
 
 
 @effects.command(name="list")
@@ -164,7 +166,7 @@ def get_command(aurora: str, verbose: bool):
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def list_effects_command(aurora: str, names: bool, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
-    active_effect = aurora.get_active_effect()
+    active_effect_name = aurora.get_active_effect_name()
     for effect in aurora.get_effects():
 
         # simple name printing
@@ -173,7 +175,7 @@ def list_effects_command(aurora: str, names: bool, verbose: bool):
             continue
 
         # pretty printing with effect colors and active marker
-        active = "[X]" if active_effect == effect.name else "[ ]"
+        active = "[X]" if active_effect_name == effect.name else "[ ]"
         click.echo(f"{active} {effect.to_terminal()}")
 
 
