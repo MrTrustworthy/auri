@@ -127,11 +127,19 @@ def set(name: str, aurora: str, verbose: bool):
 
 @effects.command(name="list")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-n", "--names", is_flag=True, default=False, help="Only prints the effect names and exits")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def list_effects_command(aurora: str, verbose: bool):
+def list_effects_command(aurora: str, names: bool, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     active_effect = aurora.get_active_effect()
     for effect in aurora.get_effects():
+
+        # simple name printing
+        if names:
+            click.echo(effect.name)
+            continue
+
+        # pretty printing with effect colors and active marker
         active = "[X]" if active_effect == effect.name else "[ ]"
         click.echo(f"{active} {effect.to_terminal()}")
 
