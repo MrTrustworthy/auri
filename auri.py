@@ -30,9 +30,10 @@ def aurora():
 
 
 @aurora.command()
-@click.argument("name")
+@click.argument("name", nargs=-1)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def activate(name: str, verbose: bool):
+    name = " ".join(name)
     set_active(name, verbose=verbose)
     click.echo(f"Set {name} as active Aurora")
 
