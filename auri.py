@@ -1,8 +1,8 @@
 import json
 import time
-from pprint import pprint
-from warnings import warn
 from difflib import get_close_matches
+from warnings import warn
+
 import click
 
 from auri.ambilight import set_effect_to_current_screen_colors
@@ -127,6 +127,29 @@ def set_effect(name: str, aurora: str, verbose: bool):
     click.echo(f"Set current effect to {effect_name}")
 
 
+@effects.command(name="delete")
+@click.argument("name", nargs=-1)
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def delete_effect(name: str, aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    effect_name = " ".join(name)
+    click.confirm(f"This will delete the effect '{effect_name}' from {aurora}, are you sure?", abort=True)
+
+    try:
+        aurora.delete_effect(effect_name)
+    except AuroraException:
+        if verbose:
+            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
+        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
+        if len(closest) == 0:
+            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
+            return
+        effect_name = closest[0]
+        aurora.delete_effect(effect_name)
+    click.echo(f"Deleted effect {effect_name}")
+
+
 @effects.command(name="get")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -199,7 +222,6 @@ def alfred_prompt():
 
     data = []
     for effect in aurora.get_effects():
-
         effect_data = {
             "uuid": effect.name,
             "title": effect.name,
@@ -220,6 +242,7 @@ def alfred_prompt():
 def alfred_command(ctx, command: str):
     command_string = " ".join(command)
     ctx.invoke(set_effect, name=command_string)
+
 
 if __name__ == '__main__':
     cli()

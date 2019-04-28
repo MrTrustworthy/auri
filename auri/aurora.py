@@ -410,8 +410,14 @@ class Aurora(object):
         data = {"write": effect_data}
         self.__command("put", "effects", data=data)
 
+    def delete_effect(self, name: str):
+        """Removed the specified effect from the device"""
+        data = {"write": {"command": "delete",
+                          "animName": name}}
+        self.__command("put", "effects", data=data)
+
     ###########################################
-    # Effect methods
+    # Effect methods, not sure if i need them
     ###########################################
 
     @property
@@ -436,12 +442,6 @@ class Aurora(object):
         data = {"write": {"command": "request",
                           "animName": name}}
         return self.__command("put", "effects", data=data)
-
-    def effect_delete(self, name: str):
-        """Removed the specified effect from the device"""
-        data = {"write": {"command": "delete",
-                          "animName": name}}
-        self.__command("put", "effects", data=data)
 
     def effect_rename(self, old_name: str, new_name: str):
         """Renames the specified effect saved on the device to a new name"""

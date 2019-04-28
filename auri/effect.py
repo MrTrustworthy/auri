@@ -1,11 +1,11 @@
 from colorsys import hsv_to_rgb
-from itertools import cycle
 from typing import Any, Dict
 
 from PIL import Image, ImageDraw
 
 IMAGE_SIZE = 64
 FLAG_TILES = 10  # How many "characters" of color to show in terminal, will wrap around if less colors exist
+
 
 class EffectColor:
     def __init__(self, data: Dict[str, int]):
@@ -42,7 +42,6 @@ class Effect:
         self.palette = [EffectColor(data) for data in effect_data["palette"]]
 
     def to_terminal(self):
-
         color_cycle = [c.termcode for c in self.palette] * FLAG_TILES
 
         flag = ''.join(color_cycle[:FLAG_TILES])
