@@ -19,7 +19,31 @@ def cli():
     pass
 
 
-@cli.command()
+# AURORA AND CONTEXT MANAGEMENT
+
+
+@cli.group()
+def aurora():
+    pass
+
+
+@aurora.command()
+@click.argument("name")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def activate(name: str, verbose: bool):
+    set_active(name, verbose=verbose)
+    click.echo(f"Set {name} as active Aurora")
+
+
+@aurora.command(name="list")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def list_command(verbose: bool):
+    for aurora in get_configured_leafs():
+        default = " [Active]" if is_default(aurora, verbose=verbose) else ""
+        click.echo(f"{str(aurora)}{default}")
+
+
+@aurora.command()
 @click.argument("option", default="info")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -32,60 +56,7 @@ def query(option: str, aurora: str, verbose: bool):
         click.echo(f"Operator '{option}' doesn't exist")
 
 
-@cli.command()
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def list(verbose: bool):
-    for aurora in get_configured_leafs():
-        default = " [Active]" if is_default(aurora, verbose=verbose) else ""
-        click.echo(f"{str(aurora)}{default}")
-
-
-@cli.group()
-def effects():
-    pass
-
-
-@effects.command()
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def list(aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
-    active_effect = aurora.get_active_effect()
-    for effect in aurora.get_effects():
-        active = "[X]" if active_effect == effect.name else "[ ]"
-        click.echo(f"{active} {effect.to_terminal()}")
-
-
-@effects.command()
-@click.argument("name", nargs=-1)
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def set(name: str, aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
-    effect_name = " ".join(name)
-    try:
-        aurora.set_active_effect(effect_name)
-    except AuroraException:
-        if verbose:
-            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
-        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
-        if len(closest) == 0:
-            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
-            return
-        effect_name = closest[0]
-        aurora.set_active_effect(effect_name)
-    click.echo(f"Set current effect to {effect_name}")
-
-
-@cli.command()
-@click.argument("name")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def activate(name: str, verbose: bool):
-    set_active(name, verbose=verbose)
-    click.echo(f"Set {name} as active Aurora")
-
-
-@cli.command()
+@aurora.command()
 @click.option("-a", "--amount", default=1, show_default=True,
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -125,7 +96,47 @@ def setup(amount: int, verbose: bool):
     click.echo("Added all requested Auroras - Done.")
 
 
-@cli.command()
+# EFFECT MANAGEMENT
+
+
+@cli.group()
+def effects():
+    pass
+
+
+@effects.command()
+@click.argument("name", nargs=-1)
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def set(name: str, aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    effect_name = " ".join(name)
+    try:
+        aurora.set_active_effect(effect_name)
+    except AuroraException:
+        if verbose:
+            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
+        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
+        if len(closest) == 0:
+            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
+            return
+        effect_name = closest[0]
+        aurora.set_active_effect(effect_name)
+    click.echo(f"Set current effect to {effect_name}")
+
+
+@effects.command(name="list")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def list_effects_command(aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    active_effect = aurora.get_active_effect()
+    for effect in aurora.get_effects():
+        active = "[X]" if active_effect == effect.name else "[ ]"
+        click.echo(f"{active} {effect.to_terminal()}")
+
+
+@effects.command()
 @click.option("-d", "--delay", default=3, show_default=True,
               help="Effect update delay in seconds")
 @click.option("-t", "--top", default=4, show_default=True,
