@@ -398,8 +398,11 @@ class Aurora(object):
     def get_effects(self) -> List[Effect]:
         data = {"write": {"command": "requestAll"}}
         effect_data = self.__command("put", "effects", data=data)
-        animation_Data = effect_data.get("animations", [])
-        return [Effect(data) for data in animation_Data]
+        animation_data = effect_data.get("animations", [])
+        return [Effect(data) for data in animation_data]
+
+    def get_effect_names(self) -> List[str]:
+        return [e.name for e in self.get_effects()]
 
     def set_raw_effect_data(self, effect_data: dict):
         """Sends a raw dict containing effect data to the device.

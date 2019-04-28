@@ -1,6 +1,6 @@
 import time
 from warnings import warn
-
+from difflib import get_close_matches
 import click
 
 from auri.ambilight import set_effect_to_current_screen_colors
@@ -55,13 +55,26 @@ def list(aurora: str, verbose: bool):
         active = "[X]" if active_effect == effect.name else "[ ]"
         click.echo(f"{active} {effect.to_terminal()}")
 
+
 @effects.command()
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def set(name: str, aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
-    aurora.set_active_effect(" ".join(name))
+    effect_name = " ".join(name)
+    try:
+        aurora.set_active_effect(effect_name)
+    except AuroraException:
+        if verbose:
+            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
+        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
+        if len(closest) == 0:
+            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
+            return
+        effect_name = closest[0]
+        aurora.set_active_effect(effect_name)
+    click.echo(f"Set current effect to {effect_name}")
 
 
 @cli.command()
