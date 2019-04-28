@@ -17,6 +17,8 @@ from auri.aurora import Aurora
 #   }
 # }
 # But an empty dict {} is also valid for first setups
+from auri.effect import Effect
+
 AuroraConf = Dict[str, Union[str, bool]]
 AuroraConfigs = Dict[str, AuroraConf]
 config_schema = {
@@ -135,7 +137,10 @@ def add_aurora_to_config(aurora: Aurora, verbose: bool = False):
 def save_images(aurora: Aurora):
     for effect in aurora.get_effects():
         image = effect.to_image()
-        image.save(os.path.join(IMAGE_PATH, f"img_{aurora.name}_{effect.name}.jpg"))
+        image.save(image_path_for(aurora, effect))
+
+def image_path_for(aurora: Aurora, effect: Effect) -> str:
+    return os.path.join(IMAGE_PATH, f"img_{aurora.name}_{effect.name}.jpg")
 
 
 def is_default(aurora: Aurora, verbose: bool = False) -> bool:

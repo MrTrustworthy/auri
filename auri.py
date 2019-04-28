@@ -1,4 +1,6 @@
+import json
 import time
+from pprint import pprint
 from warnings import warn
 from difflib import get_close_matches
 import click
@@ -7,7 +9,7 @@ from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
 from auri.aurora_finder import find_aurora_addresses
 from auri.config import get_leaf_by_name_or_default, aurora_name_if_already_configured, get_configured_leafs, \
-    add_aurora_to_config, CONF_PATH, is_default, set_active, save_images
+    add_aurora_to_config, CONF_PATH, is_default, set_active, save_images, IMAGE_PATH, image_path_for
 
 
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
@@ -39,8 +41,8 @@ def activate(name: str, verbose: bool):
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def list_command(verbose: bool):
     for aurora in get_configured_leafs():
-        default = " [Active]" if is_default(aurora, verbose=verbose) else ""
-        click.echo(f"{str(aurora)}{default}")
+        default = " [X]" if is_default(aurora, verbose=verbose) else "[ ]"
+        click.echo(f"{default} {str(aurora)}")
 
 
 @aurora.command()
@@ -104,11 +106,11 @@ def effects():
     pass
 
 
-@effects.command()
+@effects.command(name="set")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def set(name: str, aurora: str, verbose: bool):
+def set_effect(name: str, aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     effect_name = " ".join(name)
     try:
@@ -158,6 +160,7 @@ def list_effects_command(aurora: str, names: bool, verbose: bool):
 def imagegen(aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     save_images(aurora)
+    click.echo(f"Generated images into {IMAGE_PATH}")
 
 
 @effects.command()
@@ -182,6 +185,41 @@ def ambi(delay: int, top: int, quantization: int, aurora: str, verbose: bool):
             print(f"Updating effect took {time.time()-start} seconds")
         time.sleep(delay)
 
+
+# ALFRED WORKFLOW HELPERS
+
+@cli.group()
+def alfred():
+    pass
+
+
+@alfred.command(name="prompt")
+def alfred_prompt():
+    aurora = get_leaf_by_name_or_default(None)
+
+    data = []
+    for effect in aurora.get_effects():
+
+        effect_data = {
+            "uuid": effect.name,
+            "title": effect.name,
+            "autocomplete": effect.name,
+            "arg": effect.name,
+            "subtitle": "change theme",
+            "icon": {
+                "path": image_path_for(aurora, effect)
+            }
+        }
+        data.append(effect_data)
+    click.echo(json.dumps({"items": data}))
+
+
+@alfred.command(name="command")
+@click.argument("command", nargs=-1)
+@click.pass_context
+def alfred_command(ctx, command: str):
+    command_string = " ".join(command)
+    ctx.invoke(set_effect, name=command_string)
 
 if __name__ == '__main__':
     cli()
