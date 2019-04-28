@@ -1,10 +1,12 @@
 import colorsys
 import random
 import re
-from typing import Union, Any, Dict
+from typing import Union, Any, Dict, List
 
 import requests
 from requests import HTTPError
+
+from auri.effect import Effect
 
 
 class AuroraException(Exception):
@@ -424,10 +426,18 @@ class Aurora(object):
                           "animName": name}}
         return self.__command("put", "effects", data=data)
 
-    def effect_details_all(self) -> dict:
+
+    def get_effects_details(self) -> dict:
         """Returns a dict containing details for all effects on the device"""
         data = {"write": {"command": "requestAll"}}
         return self.__command("put", "effects", data=data)
+
+
+    def get_effects(self) -> List[Effect]:
+        return [Effect(data) for data in self.get_animations()]
+
+    def get_animations(self) -> dict:
+        return self.get_effects_details().get("animations", [])
 
     def effect_delete(self, name: str):
         """Removed the specified effect from the device"""

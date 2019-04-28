@@ -4,7 +4,7 @@ from os.path import expanduser
 from typing import Dict, Union, Tuple, List
 
 import jsonschema
-from click._unicodefun import click
+from click import echo
 
 from auri.aurora import Aurora
 
@@ -12,7 +12,8 @@ from auri.aurora import Aurora
 # { "192.168.0.255": {
 #     "name": "bananaleaf",
 #     "token": "bananas",
-#     "default": True
+#     "default": True,
+#     "mac": "ab:cd"
 #   }
 # }
 # But an empty dict {} is also valid for first setups
@@ -44,7 +45,7 @@ class ConfigException(Exception):
 
 def _verbose_echo(verbose, text):
     if verbose:
-        click.echo(text)
+        echo(text)
 
 
 # Handle configuration loading, saving and validating
@@ -81,7 +82,7 @@ def _ensure_valid_defaults(config, verbose: bool = False):
         _verbose_echo(verbose, f"Config is empty, so there is no default Aurora. Continuing.")
         return
 
-    click.echo(f"There are {default_auroras} default Auroras, "
+    echo(f"There are {default_auroras} default Auroras, "
                "repairing config automatically now to ensure exactly 1 Aurora is default")
 
     _clear_all_defaults(config)
@@ -90,9 +91,11 @@ def _ensure_valid_defaults(config, verbose: bool = False):
         data["default"] = True
         return
 
+
 def _clear_all_defaults(config: AuroraConfigs):
     for ip, data in config.items():
         data["default"] = False
+
 
 # Loading and retrieving configurations for commands that affect multiple Auroras
 
@@ -121,7 +124,7 @@ def aurora_name_if_already_configured(aurora: Aurora, verbose: bool = False) -> 
 def add_aurora_to_config(aurora: Aurora, verbose: bool = False):
     config = _load_config()
     if verbose and aurora.ip_address in config.keys():
-        click.echo(f"Aurora at {str(aurora)} is already configured, overwriting it with new configuration")
+        echo(f"Aurora at {str(aurora)} is already configured, overwriting it with new configuration")
     config.update(aurora.serialize())
     _save_config(config)
 
@@ -150,7 +153,7 @@ def get_leaf_by_name_or_default(name, verbose: bool = False) -> Aurora:
         return _get_leaf_by_name(name, verbose=verbose)
     except ConfigException:
         if verbose:
-            click.echo(f"Found no Aurora with the name {name}, attempting to use default instead")
+            echo(f"Found no Aurora with the name {name}, attempting to use default instead")
         return _get_default_leaf(verbose=verbose)
 
 

@@ -23,7 +23,7 @@ def cli():
 @click.argument("option", default="info")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def query(option, aurora, verbose):
+def query(option: str, aurora: str, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     try:
         result = getattr(aurora, option)
@@ -34,10 +34,19 @@ def query(option, aurora, verbose):
 
 @cli.command()
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def list(verbose):
+def list(verbose: bool):
     for aurora in get_configured_leafs():
-        default = " [DEFAULT]" if is_default(aurora, verbose=verbose) else ""
+        default = " [Active]" if is_default(aurora, verbose=verbose) else ""
         click.echo(f"{str(aurora)}{default}")
+
+
+@cli.command()
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def effects(aurora: str, verbose: bool):
+    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    for effect in aurora.get_effects():
+        click.echo(effect.to_terminal())
 
 
 @cli.command()
@@ -47,11 +56,12 @@ def activate(name: str, verbose: bool):
     set_active(name, verbose=verbose)
     click.echo(f"Set {name} as active Aurora")
 
+
 @cli.command()
 @click.option("-a", "--amount", default=1, show_default=True,
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def setup(amount, verbose):
+def setup(amount: int, verbose: bool):
     click.echo(f"Searching for a total of {amount} Nanoleaf Auroras, press <CTRL+C> to cancel")
 
     for aurora_ip, aurora_mac in find_aurora_addresses(amount):
