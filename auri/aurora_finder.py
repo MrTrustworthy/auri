@@ -24,7 +24,7 @@ def _get_deviceid_from_response(response: str) -> str:
         return line.replace("nl-deviceid:", "").strip()
 
 
-def _get_response(sock: Socket) -> str:
+def _get_response(sock: Socket) -> Union[str, None]:
     try:
         ready = select.select([sock], [], [], 5)
         if ready[0]:
