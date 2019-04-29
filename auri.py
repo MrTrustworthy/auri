@@ -66,7 +66,6 @@ def query(option: str, aurora: str, verbose: bool):
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def setup(amount: int, verbose: bool):
-
     default_name = "My Nanoleaf"
     click.echo(f"Searching for a total of {amount} Nanoleaf Auroras, press <CTRL+C> to cancel")
 
@@ -202,7 +201,7 @@ def imagegen(aurora: str, verbose: bool):
               help="How 'grey' can something be before it will be filtered out")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def ambi(delay: int, top: int, quantization: int, aurora: str, greyness:int, verbose: bool):
+def ambi(delay: int, top: int, quantization: int, aurora: str, greyness: int, verbose: bool):
     aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     if quantization < top:
         warn("Quantization is less than top, which doesn't make sense. "

@@ -18,7 +18,7 @@ from auri.aurora import Aurora, Effect
 # But an empty dict {} is also valid for first setups
 AuroraConf = Dict[str, Union[str, bool]]
 AuroraConfigs = Dict[str, AuroraConf]
-config_schema = {
+configs_schema = {
     "type": "object",
     "patternProperties": {
         "^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$": {
@@ -47,6 +47,7 @@ class ConfigException(Exception):
 
 def set_active(name: str, verbose: bool = False):
     configs = _load_config(verbose=verbose)
+    _clear_all_actives(configs)
     for ip, data in configs.items():
         if data["name"] != name:
             continue
@@ -95,7 +96,7 @@ def is_active(aurora: Aurora, verbose: bool = False) -> bool:
     raise ConfigException(f"{str(aurora)} not found in config!")
 
 
-def get_leaf_by_name_or_active(name, verbose: bool = False) -> Aurora:
+def get_leaf_by_name_or_active(name: str, verbose: bool = False) -> Aurora:
     """ To get the aurora to use for a certain command
 
     Raises a ConfigException when
@@ -126,7 +127,7 @@ def _get_active_leaf(verbose: bool = False) -> Aurora:
     raise ConfigException("No active Aurora found")
 
 
-def _get_leaf_by_name(name, verbose: bool = False) -> Aurora:
+def _get_leaf_by_name(name: str, verbose: bool = False) -> Aurora:
     for ip, data in _load_config(verbose=verbose).items():
         if not data["name"] == name:
             continue
@@ -152,36 +153,36 @@ def _save_config(config: AuroraConfigs, verbose: bool = False):
         return json.dump(config, outfile, sort_keys=True, indent=4)
 
 
-def _ensure_valid_config(config, verbose: bool = False):
-    jsonschema.validate(config, config_schema)
-    _ensure_valid_actives(config, verbose=verbose)
+def _ensure_valid_config(configs: AuroraConfigs, verbose: bool = False):
+    jsonschema.validate(configs, configs_schema)
+    _ensure_valid_actives(configs, verbose=verbose)
 
 
-def _ensure_valid_actives(config, verbose: bool = False):
-    active_auroras = len(list(filter(lambda a: a["active"], config.values())))
+def _ensure_valid_actives(configs: AuroraConfigs, verbose: bool = False):
+    active_auroras = len(list(filter(lambda a: a["active"], configs.values())))
     if active_auroras == 1:
         _verbose_echo(verbose, f"There is exactly one active Aurora, which is expected. Continuing.")
         return
 
-    if len(config.keys()) == 0:
+    if len(configs.keys()) == 0:
         _verbose_echo(verbose, f"Config is empty, so there is no active Aurora. Continuing.")
         return
 
     echo(f"There are {active_auroras} active Auroras, "
-         "repairing config automatically now to ensure exactly 1 Aurora is active")
+         "repairing configs automatically now to ensure exactly 1 Aurora is active")
 
-    _clear_all_actives(config)
+    _clear_all_actives(configs)
 
-    for ip, data in config.items():
+    for ip, data in configs.items():
         data["active"] = True
         return
 
 
-def _clear_all_actives(config: AuroraConfigs):
-    for ip, data in config.items():
+def _clear_all_actives(configs: AuroraConfigs):
+    for ip, data in configs.items():
         data["active"] = False
 
 
-def _verbose_echo(verbose, text):
+def _verbose_echo(verbose: bool, text: str):
     if verbose:
         echo(text)
