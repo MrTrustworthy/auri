@@ -8,8 +8,8 @@ import click
 from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
 from auri.aurora_finder import find_aurora_addresses
-from auri.config import get_leaf_by_name_or_default, aurora_name_if_already_configured, get_configured_leafs, \
-    add_aurora_to_config, CONF_PATH, is_default, set_active, save_images, IMAGE_PATH, image_path_for
+from auri.config import get_leaf_by_name_or_active, aurora_name_if_already_configured, get_configured_leafs, \
+    add_aurora_to_config, CONF_PATH, is_active, set_active, save_images, IMAGE_PATH, image_path_for
 
 
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
@@ -24,12 +24,12 @@ def cli():
 # AURORA AND CONTEXT MANAGEMENT
 
 
-@cli.group()
-def aurora():
+@cli.group(name="aurora")
+def aurora_group():
     pass
 
 
-@aurora.command()
+@aurora_group.command()
 @click.argument("name", nargs=-1)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def activate(name: str, verbose: bool):
@@ -38,20 +38,20 @@ def activate(name: str, verbose: bool):
     click.echo(f"Set {name} as active Aurora")
 
 
-@aurora.command(name="list")
+@aurora_group.command(name="list")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def list_command(verbose: bool):
     for aurora in get_configured_leafs():
-        default = " [X]" if is_default(aurora, verbose=verbose) else "[ ]"
+        default = " [X]" if is_active(aurora, verbose=verbose) else "[ ]"
         click.echo(f"{default} {str(aurora)}")
 
 
-@aurora.command()
+@aurora_group.command()
 @click.argument("option", default="info")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def query(option: str, aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     try:
         result = getattr(aurora, option)
         if callable(result):
@@ -61,17 +61,19 @@ def query(option: str, aurora: str, verbose: bool):
         click.echo(f"Operator '{option}' doesn't exist")
 
 
-@aurora.command()
+@aurora_group.command()
 @click.option("-a", "--amount", default=1, show_default=True,
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def setup(amount: int, verbose: bool):
+
+    default_name = "My Nanoleaf"
     click.echo(f"Searching for a total of {amount} Nanoleaf Auroras, press <CTRL+C> to cancel")
 
     for aurora_ip, aurora_mac in find_aurora_addresses(amount):
 
         click.echo(f"Found one Aurora at {aurora_ip}")
-        aurora = Aurora(aurora_ip, "UNKNOWN", aurora_mac, None)  # Token and name will be set later
+        aurora = Aurora(aurora_ip, default_name, aurora_mac, None)  # Token and name will be set later
 
         name = aurora_name_if_already_configured(aurora, verbose=verbose)
         info_message = f"already configured as '{name}'" if name is not None else "not yet configured"
@@ -80,7 +82,7 @@ def setup(amount: int, verbose: bool):
             click.echo(f"Skipping setup for Aurora at {str(aurora)}")
             continue
 
-        aurora.name = click.prompt(f"Please give this Aurora a name:", default="My Nanoleaf")
+        aurora.name = click.prompt(f"Please give this Aurora a name:", default=default_name)
 
         click.echo(f"Continuing setup for Aurora at {str(aurora)}")
 
@@ -104,17 +106,17 @@ def setup(amount: int, verbose: bool):
 # EFFECT MANAGEMENT
 
 
-@cli.group()
-def effects():
+@cli.group(name="effects")
+def effects_group():
     pass
 
 
-@effects.command(name="set")
+@effects_group.command(name="set")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def set_effect(name: str, aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     effect_name = " ".join(name)
     try:
         aurora.set_active_effect(effect_name)
@@ -130,12 +132,12 @@ def set_effect(name: str, aurora: str, verbose: bool):
     click.echo(f"Set current effect to {effect_name}")
 
 
-@effects.command(name="delete")
+@effects_group.command(name="delete")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def delete_effect(name: str, aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     effect_name = " ".join(name)
     click.confirm(f"This will delete the effect '{effect_name}' from {aurora}, are you sure?", abort=True)
 
@@ -153,20 +155,20 @@ def delete_effect(name: str, aurora: str, verbose: bool):
     click.echo(f"Deleted effect {effect_name}")
 
 
-@effects.command(name="get")
+@effects_group.command(name="get")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def get_command(aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     click.echo(aurora.get_active_effect_name())
 
 
-@effects.command(name="list")
+@effects_group.command(name="list")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-n", "--names", is_flag=True, default=False, help="Only prints the effect names and exits")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def list_effects_command(aurora: str, names: bool, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     active_effect_name = aurora.get_active_effect_name()
     for effect in aurora.get_effects():
 
@@ -177,19 +179,19 @@ def list_effects_command(aurora: str, names: bool, verbose: bool):
 
         # pretty printing with effect colors and active marker
         active = "[X]" if active_effect_name == effect.name else "[ ]"
-        click.echo(f"{active} {effect.to_terminal()}")
+        click.echo(f"{active} {effect.color_flag_terminal()} {effect.name}")
 
 
-@effects.command()
+@effects_group.command()
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def imagegen(aurora: str, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     save_images(aurora)
     click.echo(f"Generated images into {IMAGE_PATH}")
 
 
-@effects.command()
+@effects_group.command()
 @click.option("-d", "--delay", default=1, show_default=True,
               help="Effect update delay in seconds")
 @click.option("-t", "--top", default=10, show_default=True,
@@ -201,7 +203,7 @@ def imagegen(aurora: str, verbose: bool):
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def ambi(delay: int, top: int, quantization: int, aurora: str, greyness:int, verbose: bool):
-    aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
+    aurora = get_leaf_by_name_or_active(aurora, verbose=verbose)
     if quantization < top:
         warn("Quantization is less than top, which doesn't make sense. "
              f"Reducing top to match quantization ({quantization})")
@@ -223,7 +225,7 @@ def alfred():
 
 @alfred.command(name="prompt")
 def alfred_prompt():
-    aurora = get_leaf_by_name_or_default(None)
+    aurora = get_leaf_by_name_or_active(None)
 
     data = []
     for effect in aurora.get_effects():
