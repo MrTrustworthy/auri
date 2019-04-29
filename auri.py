@@ -190,15 +190,17 @@ def imagegen(aurora: str, verbose: bool):
 
 
 @effects.command()
-@click.option("-d", "--delay", default=3, show_default=True,
+@click.option("-d", "--delay", default=1, show_default=True,
               help="Effect update delay in seconds")
-@click.option("-t", "--top", default=4, show_default=True,
+@click.option("-t", "--top", default=10, show_default=True,
               help="How many of the quantized colors should be used for the effect")
-@click.option("-q", "--quantization", default=4, show_default=True,
+@click.option("-q", "--quantization", default=10, show_default=True,
               help="In how many different colors should the screen be broken down to")
+@click.option("-g", "--greyness", default=10, show_default=True,
+              help="How 'grey' can something be before it will be filtered out")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def ambi(delay: int, top: int, quantization: int, aurora: str, verbose: bool):
+def ambi(delay: int, top: int, quantization: int, aurora: str, greyness:int, verbose: bool):
     aurora = get_leaf_by_name_or_default(aurora, verbose=verbose)
     if quantization < top:
         warn("Quantization is less than top, which doesn't make sense. "
@@ -206,7 +208,7 @@ def ambi(delay: int, top: int, quantization: int, aurora: str, verbose: bool):
         top = quantization
     while True:
         start = time.time()
-        set_effect_to_current_screen_colors(aurora, quantization, top)
+        set_effect_to_current_screen_colors(aurora, quantization, top, greyness)
         if verbose > 0:
             print(f"Updating effect took {time.time()-start} seconds")
         time.sleep(delay)

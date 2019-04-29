@@ -1,6 +1,7 @@
 from colorsys import rgb_to_hsv
-from typing import List, Tuple, Any, Dict
+from typing import List, Tuple, Any, Dict, Iterator
 
+import click
 from PIL import ImageGrab
 
 from auri.aurora import Aurora
@@ -31,21 +32,29 @@ EFFECT_TEMPLATE: Template = {
 }
 
 
-def set_effect_to_current_screen_colors(aurora: Aurora, quantization: int, top: int):
+def set_effect_to_current_screen_colors(aurora: Aurora, quantization: int, top: int, min_saturation: int):
     """ Returns a list of the top-N colors the main monitor currently shows in HSV-format
 
     :param aurora: Instance of the Nanoleaf device to use
     :param quantization: As each pixel might have a slightly different color, quantization is used to reduce the colors
         into a set of similar colors. Setting this lower means having more different colors show up in the result
+    :param min_saturation: How grey (according to HSV saturation) can something be before it's filtered out
     :param top: How many of the top colors to use for the nanoleaf
     """
     assert quantization >= top, f"Quantization ({quantization}) must be at least as big as Top ({top})!"
-    colors = _get_current_display_image_colors(quantization, top)
-    effect_data = _render_effect_template(colors)
+    colors = _get_current_display_image_colors(quantization)
+
+    # reduce amount of "grey" colors if possible
+    colors_filtered = list(filter(lambda c: c[1] >= min_saturation, colors))
+    if len(colors_filtered) == 0:
+        click.echo(f"Could not find any colors to show that are above saturation {min_saturation}, trying without it")
+        colors_filtered = colors
+
+    effect_data = _render_effect_template(colors_filtered[:top])
     aurora.set_raw_effect_data(effect_data)
 
 
-def _get_current_display_image_colors(quantization: int, top: int) -> List[Color]:
+def _get_current_display_image_colors(quantization: int) -> List[Color]:
     """ Returns a list of the top-N colors the main monitor currently shows in HSV-format
 
     :param quantization: As each pixel might have a slightly different color, quantization is used to reduce the colors
@@ -57,11 +66,10 @@ def _get_current_display_image_colors(quantization: int, top: int) -> List[Color
     img = ImageGrab.grab()
     img = img.quantize(quantization)
     colors = sorted(img.convert("RGB").getcolors(), reverse=True)
+    return [_rgb_to_hsv(color) for frequency, color in colors]
 
-    return [_rgb_to_hsv(color) for frequency, color in colors[:top]]
 
-
-def _render_effect_template(colors: List[Color]) -> Template:
+def _render_effect_template(colors: Iterator[Color]) -> Template:
     """ Given a list of colors, renders the effects template that can be HTTP PUT to Nanoleaf
 
     :param: colors: List of all colors in HSV/HSB format that's used for rendering
