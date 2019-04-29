@@ -42,8 +42,8 @@ def activate(name: str, verbose: bool):
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def list_command(verbose: bool):
     for aurora in get_configured_leafs():
-        default = " [X]" if is_active(aurora, verbose=verbose) else "[ ]"
-        click.echo(f"{default} {str(aurora)}")
+        active = "[X]" if is_active(aurora, verbose=verbose) else "[ ]"
+        click.echo(f"{active} {str(aurora)}")
 
 
 @aurora_group.command()

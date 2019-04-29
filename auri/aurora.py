@@ -74,7 +74,7 @@ class Effect:
         """
         color_cycle = [c.termcode for c in self._colors] * FLAG_TILES
         flag = ''.join(color_cycle[:self._flag_size])
-        return f"{flag} {self.name} "
+        return flag
 
     def to_image(self) -> Image:
         """Returns a (self._image_size x self._image_size) large image of the colors in this effect, left to right
