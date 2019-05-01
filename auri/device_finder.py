@@ -1,8 +1,8 @@
+import re
+import select
+import socket
 from typing import Generator, Tuple, Union
 
-import socket
-import select
-import re
 Socket = socket.socket
 
 
