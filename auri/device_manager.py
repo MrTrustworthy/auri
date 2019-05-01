@@ -8,7 +8,7 @@ import jsonschema
 import click
 from auri.aurora import Aurora, Effect
 
-# Config always looks like this
+# A serialized configuration looks like this
 # { "192.168.0.255": {
 #     "name": "bananaleaf",
 #     "token": "bananas",
@@ -16,7 +16,7 @@ from auri.aurora import Aurora, Effect
 #     "mac": "ab:cd"
 #   }
 # }
-# But an empty dict {} is also valid for first setups
+# But an empty dict {} is also valid
 AuroraConf = Dict[str, Union[str, bool]]
 AuroraConfigs = Dict[str, AuroraConf]
 configs_schema = {
@@ -34,12 +34,23 @@ configs_schema = {
     }
 }
 
+# Environment variable names and defaults
+ENV_CONF_PATH = "AURI_CONFIG_PATH"
+DEFAULT_CONF_PATH = "~/.config/auri/config.json"
+ENV_IMAGE_PATH = "AURI_IMAGE_PATH"
+DEFAULT_IMAGE_PATH = "~/.config/auri"
+ENV_IMAGE_FILETYPE = "AURI_IMAGE_FILETYPE"
+DEFAULT_IMAGE_FILETYPE = ".jpg"
+
 
 class DeviceNotExistsException(Exception):
     pass
 
 
 def inject_config(func):
+    """Wrapper to inject a newly loaded config into the wrapped function"""
+
+    # TODO wrapper should only pass `verbose` if the wrapped function expects it
     @wraps(func)
     def inject_config_wraps(self, *args, **kwargs):
         verbose = kwargs.get("verbose", False)
@@ -50,16 +61,18 @@ def inject_config(func):
 
 
 class DeviceManager:
+    """The device manager is a wrapper around multiple aurora devices which performs SerDe in the background"""
 
     def __init__(self):
-        self.conf_path = expanduser("~/.config/auri/config.json")
-        self.image_path = expanduser("~/.config/auri")
-        self.image_file_ending = ".jpg"
+        self.conf_path = expanduser(os.getenv(ENV_CONF_PATH, DEFAULT_CONF_PATH))
+        self.image_path = expanduser(os.getenv(ENV_IMAGE_PATH, DEFAULT_IMAGE_PATH))
+        self.image_file_ending = os.getenv(ENV_IMAGE_FILETYPE, DEFAULT_IMAGE_FILETYPE)
 
     # Loading and retrieving configurations for commands that affect multiple Auroras
 
     @inject_config
     def set_active(self, configs: AuroraConfigs, name: str, verbose: bool = False):
+        """Switch the currently active device to the one with a given name"""
         self._clear_all_actives(configs)
         for ip, data in configs.items():
             if data["name"] != name:
@@ -78,9 +91,9 @@ class DeviceManager:
         raise DeviceNotExistsException(f"{str(aurora)} not found in config")
 
     def get_by_name_or_active(self, name: str, verbose: bool = False) -> Aurora:
-        """ To get the aurora to use for a certain command
+        """ To get the device to use for a certain command. This is the most-used function of the DeviceManager
 
-        Raises a DeviceException when
+        Raises a DeviceNotExistsException when
         (1) Neither the config with a given name exists nor a active leaf is configured
         (2) The config is empty (a subset of (1))
 
@@ -119,6 +132,12 @@ class DeviceManager:
         if data is None:
             raise DeviceNotExistsException(f"No Aurora with ip '{ip}' found")
         return Aurora.deserialize(ip, data)
+
+    def get_name_by_ip(self, ip: str, verbose: bool = False) -> Union[str, None]:
+        try:
+            return self.get_by_ip(ip, verbose=verbose).name
+        except DeviceNotExistsException:
+            return None
 
     @inject_config
     def get_all(self, configs: AuroraConfigs, verbose: bool = False) -> List[Aurora]:

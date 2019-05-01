@@ -7,7 +7,7 @@ import click
 
 from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
-from auri.aurora_finder import find_aurora_addresses
+from auri.device_finder import DeviceFinder
 from auri.device_manager import DeviceManager, DeviceNotExistsException
 
 
@@ -77,30 +77,27 @@ def device_setup_command(amount: int, verbose: bool):
     click.echo(f"Searching for a total of {amount} Nanoleaf Auroras, press <CTRL+C> to cancel")
     manager = DeviceManager()
 
-    for aurora_ip, aurora_mac in find_aurora_addresses(amount):
+    for aurora_ip, aurora_mac in DeviceFinder().find_aurora_addresses(amount):
 
-        click.echo(f"Found one Aurora at {aurora_ip}")
+        aurora_description = f"{aurora_ip} (MAC: {aurora_mac})"
+
+        click.echo(f"Found one Aurora at {aurora_description}")
 
         # let's find out if a device with that IP is already configured and offer to change the name
-        name = None
-        try:
-            name = manager.get_by_ip(aurora_ip, verbose=verbose).name
-        except DeviceNotExistsException:
-            pass
-
+        name = manager.get_name_by_ip(aurora_ip, verbose=verbose)
         info_message = f"already configured as '{name}'" if name is not None else "not yet configured"
 
         if not click.confirm(f"This Aurora is {info_message}, do you want to start the setup for it?"):
-            click.echo(f"Skipping setup for Aurora at {str(aurora)}")
+            click.echo(f"Skipping setup for Aurora at {aurora_description}")
             continue
 
-        aurora_name = click.prompt(f"Please give this Aurora a name:", default="My Nanoleaf")
+        aurora_name = click.prompt(f"Please give this Aurora a name:", default="My Nanoleaf" if name is None else name)
         aurora = Aurora(aurora_ip, aurora_name, aurora_mac, None)  # Token and name will be set later
 
-        click.echo(f"Continuing setup for Aurora at {str(aurora)}")
+        click.echo(f"Continuing setup for Aurora at {aurora_description}")
 
         while True:
-            click.confirm(f"Please hold the power button of the Aurora at {str(aurora)} for ~5 seconds "
+            click.confirm(f"Please hold the power button of the Aurora at {aurora_description} for ~5 seconds "
                           f"until the LED starts to blink, then press ENTER to continue with the setup", default=True)
             try:
                 aurora.generate_token()
