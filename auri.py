@@ -1,9 +1,11 @@
+import datetime
 import json
 import time
 from difflib import get_close_matches
 from warnings import warn
 
 import click
+import requests
 
 from auri.ambilight import set_effect_to_current_screen_colors
 from auri.aurora import Aurora, AuroraException
@@ -212,9 +214,12 @@ def effects_ambi_command(delay: int, top: int, quantization: int, aurora: str, g
         top = quantization
     while True:
         start = time.time()
-        set_effect_to_current_screen_colors(aurora, quantization, top, greyness)
+        try:
+            set_effect_to_current_screen_colors(aurora, quantization, top, greyness)
+        except requests.exceptions.HTTPError as e:
+            click.echo(f"[{datetime.datetime.now()}] Got an exception when trying to update the image: {str(e)}")
         if verbose > 0:
-            print(f"Updating effect took {time.time()-start} seconds")
+            click.echo(f"Updating effect took {time.time()-start} seconds")
         time.sleep(delay)
 
 
