@@ -1,9 +1,6 @@
 import json
 from difflib import get_close_matches
 
-import json
-from difflib import get_close_matches
-
 import click
 
 from auri.ambilight import AmbilightController

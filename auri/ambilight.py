@@ -1,6 +1,7 @@
 import datetime
 import time
 from colorsys import rgb_to_hsv
+from functools import lru_cache
 from typing import List, Tuple, Any, Dict, Iterator
 from warnings import warn
 
@@ -91,9 +92,6 @@ class AmbilightController:
     def _get_current_display_image_colors(self) -> List[Color]:
         """ Returns a list of the top-N colors the main monitor currently shows in HSV-format
 
-        :param quantization: As each pixel might have a slightly different color, quantization is used to reduce the colors
-            into a set of similar colors. Setting this lower means having more different colors show up in the result
-        :param top: How many of the colors to return
         :return: List of :top: colors after quantization, sorted by the frequency of their appearance
         """
 
@@ -122,6 +120,7 @@ class AmbilightController:
         return rendered
 
     @staticmethod
+    @lru_cache(maxsize=256)
     def _rgb_to_hsv(rgb_color: Color) -> Color:
         """ Converts the RGB colors we get from ImageGrab into HSV for the NanoLeaf
 
