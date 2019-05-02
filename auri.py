@@ -6,7 +6,7 @@ from difflib import get_close_matches
 
 import click
 
-from auri.ambilight import run_ambi_loop
+from auri.ambilight import AmbilightController
 from auri.aurora import Aurora, AuroraException
 from auri.device_finder import DeviceFinder
 from auri.device_manager import DeviceManager
@@ -207,7 +207,7 @@ def effects_list_command(aurora: str, names: bool, verbose: bool):
 def effects_ambi_command(delay: int, top: int, quantization: int, aurora: str, greyness: int, verbose: bool):
     # TODO start in background, stop with command
     aurora = DeviceManager().get_by_name_or_active(aurora, verbose=verbose)
-    run_ambi_loop(aurora, quantization, top, greyness, delay, verbose=verbose)
+    AmbilightController(aurora, quantization, top, greyness, delay, verbose=verbose).run_ambi_loop()
 
 
 # ALFRED WORKFLOW HELPERS
