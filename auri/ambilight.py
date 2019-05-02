@@ -1,7 +1,10 @@
+import time
 from colorsys import rgb_to_hsv
 from typing import List, Tuple, Any, Dict, Iterator
+from warnings import warn
 
 import click
+import requests
 from PIL import ImageGrab
 
 from auri.aurora import Aurora
@@ -30,6 +33,22 @@ EFFECT_TEMPLATE: Template = {
     },
     "loop": True
 }
+
+
+def run_ambi_loop(aurora: Aurora, quantization: int, top: int, greyness: int, delay: int, verbose: bool = False):
+    if quantization < top:
+        warn("Quantization is less than top, which doesn't make sense. "
+             f"Reducing top to match quantization ({quantization})")
+        top = quantization
+    while True:
+        start = time.time()
+        try:
+            set_effect_to_current_screen_colors(aurora, quantization, top, greyness)
+        except requests.exceptions.RequestException as e:
+            click.echo(f"[{datetime.datetime.now()}] Got an exception when trying to update the image: {str(e)}")
+        if verbose > 0:
+            click.echo(f"Updating effect took {time.time()-start} seconds")
+        time.sleep(delay)
 
 
 def set_effect_to_current_screen_colors(aurora: Aurora, quantization: int, top: int, min_saturation: int):
@@ -94,8 +113,7 @@ def _rgb_to_hsv(rgb_color: Color) -> Color:
     `colorsys.py` expects and provides values in range [0, 1], but we get and need them in a different range
     """
 
-    r, g, b = map(lambda v: v/255.0, rgb_color)
+    r, g, b = map(lambda v: v / 255.0, rgb_color)
     h, s, v = rgb_to_hsv(r, g, b)
-    h, s, v = int(h*360), int(s*100), int(v*100)
+    h, s, v = int(h * 360), int(s * 100), int(v * 100)
     return h, s, v
-

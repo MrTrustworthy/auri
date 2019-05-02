@@ -1,16 +1,15 @@
-import datetime
 import json
-import time
 from difflib import get_close_matches
-from warnings import warn
+
+import json
+from difflib import get_close_matches
 
 import click
-import requests
 
-from auri.ambilight import set_effect_to_current_screen_colors
+from auri.ambilight import run_ambi_loop
 from auri.aurora import Aurora, AuroraException
 from auri.device_finder import DeviceFinder
-from auri.device_manager import DeviceManager, DeviceNotExistsException
+from auri.device_manager import DeviceManager
 
 
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
@@ -208,19 +207,7 @@ def effects_list_command(aurora: str, names: bool, verbose: bool):
 def effects_ambi_command(delay: int, top: int, quantization: int, aurora: str, greyness: int, verbose: bool):
     # TODO start in background, stop with command
     aurora = DeviceManager().get_by_name_or_active(aurora, verbose=verbose)
-    if quantization < top:
-        warn("Quantization is less than top, which doesn't make sense. "
-             f"Reducing top to match quantization ({quantization})")
-        top = quantization
-    while True:
-        start = time.time()
-        try:
-            set_effect_to_current_screen_colors(aurora, quantization, top, greyness)
-        except requests.exceptions.HTTPError as e:
-            click.echo(f"[{datetime.datetime.now()}] Got an exception when trying to update the image: {str(e)}")
-        if verbose > 0:
-            click.echo(f"Updating effect took {time.time()-start} seconds")
-        time.sleep(delay)
+    run_ambi_loop(aurora, quantization, top, greyness, delay, verbose=verbose)
 
 
 # ALFRED WORKFLOW HELPERS

@@ -21,21 +21,23 @@ class DeviceFinder:
         aurora_socket = self._prepare_socket()
         while len(aurora_ips) < search_for_amount:
             response = DeviceFinder._get_socket_response(aurora_socket)
-            aurora_ip = self._get_aurora_ip_from_response(response)
+            aurora_ip = DeviceFinder._get_aurora_ip_from_response(response)
             if aurora_ip is None or aurora_ip in aurora_ips:
                 continue
             aurora_ips.append(aurora_ip)
-            yield aurora_ip, self._get_device_mac_from_response(response)
+            yield aurora_ip, DeviceFinder._get_device_mac_from_response(response)
 
         return
 
-    def _get_aurora_ip_from_response(self, response: str) -> Union[str, None]:
+    @staticmethod
+    def _get_aurora_ip_from_response(response: str) -> Union[str, None]:
         if response is None:
             return
         location = re.search(r"Location: http://([\d\\.]*):16021", response).group(1)
         return location
 
-    def _get_device_mac_from_response(self, response: str) -> str:
+    @staticmethod
+    def _get_device_mac_from_response(response: str) -> str:
         mac = re.search("nl-deviceid: ([\w\d:]*)", response).group(1)
         return mac
 
