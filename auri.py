@@ -1,4 +1,5 @@
 import json
+import sys
 from difflib import get_close_matches
 
 import click
@@ -67,6 +68,20 @@ def device_query_command(option: str, aurora: str, verbose: bool):
         click.echo(f"Operator '{option}' doesn't exist")
 
 
+@device_group.command(name="on")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def device_on_command(aurora: str, verbose: bool):
+    DeviceManager().get_by_name_or_active(aurora, verbose=verbose).on = True
+
+
+@device_group.command(name="off")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def device_off_command(aurora: str, verbose: bool):
+    DeviceManager().get_by_name_or_active(aurora, verbose=verbose).on = False
+
+
 @device_group.command(name="setup")
 @click.option("-a", "--amount", default=1, show_default=True,
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
@@ -119,11 +134,11 @@ def effects_group():
     pass
 
 
-@effects_group.command(name="set")
+@effects_group.command(name="play")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_set_command(name: str, aurora: str, verbose: bool):
+def effects_play_command(name: str, aurora: str, verbose: bool):
     aurora = DeviceManager().get_by_name_or_active(aurora, verbose=verbose)
     effect_name = " ".join(name)
     try:
@@ -164,11 +179,36 @@ def effects_delete_command(name: str, aurora: str, verbose: bool):
 
 
 @effects_group.command(name="get")
+@click.argument("option")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_get_command(aurora: str, verbose: bool):
+def effects_get_command(option: str, aurora: str, verbose: bool):
     aurora = DeviceManager().get_by_name_or_active(aurora, verbose=verbose)
-    click.echo(aurora.get_active_effect_name())
+    output = f"Couldn't find option {option} for `effects get"
+    if option == "name":
+        output = aurora.get_active_effect_name()
+    elif option == "brightness":
+        output = aurora.brightness
+
+    click.echo(output)
+
+
+@effects_group.command(name="set")
+@click.argument("option")
+@click.argument("value")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def effects_set_command(option: str, value: str, aurora: str, verbose: bool):
+    aurora = DeviceManager().get_by_name_or_active(aurora, verbose=verbose)
+    if option == "brightness":
+        aurora.brightness = int(value)
+    elif option == "identify":
+        aurora.identify()
+    else:
+        click.echo(f"Couldn't find the option {option}")
+        sys.exit(1)
+
+    click.echo(f"Set {option} to {value}")
 
 
 @effects_group.command(name="list")

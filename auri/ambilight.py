@@ -22,8 +22,8 @@ EFFECT_TEMPLATE: Template = {
     "animData": None,
     "palette": [],  # This is overwritten by the calling function
     "brightnessRange": {
-        "minValue": 5,
-        "maxValue": 15
+        "minValue": 50,
+        "maxValue": 100,
     },
     "transTime": {
         "minValue": 20,

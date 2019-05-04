@@ -198,10 +198,6 @@ class Aurora:
     def name(self) -> str:
         return self._name
 
-    @name.setter
-    def name(self, value: str):
-        self._name = value
-
     @property
     def ip_address(self) -> str:
         return self._ip_address
