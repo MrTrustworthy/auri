@@ -90,7 +90,7 @@ def device_setup_command(amount: int, verbose: bool):
     click.echo(f"Searching for a total of {amount} Nanoleaf Auroras, press <CTRL+C> to cancel")
     manager = DeviceManager(verbose=verbose)
 
-    for aurora_ip, aurora_mac in DeviceFinder().find_aurora_addresses(amount):
+    for aurora_ip, aurora_mac in DeviceFinder(verbose=verbose).find_aurora_addresses(amount):
 
         aurora_description = f"{aurora_ip} (MAC: {aurora_mac})"
 

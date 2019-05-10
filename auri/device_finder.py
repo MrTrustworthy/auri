@@ -3,16 +3,19 @@ import select
 import socket
 from typing import Generator, Tuple, Union
 
+import click
+
 Socket = socket.socket
 
 
 class DeviceFinder:
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
         self.device_id = "nanoleaf_aurora:light"
         self.ssdp_ip = "239.255.255.250"
         self.device_port = 1900
         self.bind_port = 9090
         self.ssdp_mx = 3
+        self.verbose = verbose
 
     def find_aurora_addresses(self, search_for_amount: int = 10) -> Generator[Tuple[str, str], None, None]:
         """Returns a list of the (IP, MAC addresses of all Auroras found on the network"""
@@ -23,7 +26,11 @@ class DeviceFinder:
             response = DeviceFinder._get_socket_response(aurora_socket)
             aurora_ip = DeviceFinder._get_aurora_ip_from_response(response)
             if aurora_ip is None or aurora_ip in aurora_ips:
+                if self.verbose:
+                    click.echo(f"Got response about device at {aurora_ip}, but skipping it as it's not needed")
                 continue
+            if self.verbose:
+                click.echo(f"Found new device at {aurora_ip}, using its address")
             aurora_ips.append(aurora_ip)
             yield aurora_ip, DeviceFinder._get_device_mac_from_response(response)
 
