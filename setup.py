@@ -1,11 +1,13 @@
 from setuptools import setup
 
+VERSION = '0.1.8'
+
 setup(
     name='auri',
-    version='0.1.7',
+    version=VERSION,
     packages=['auri'],
     url='https://github.com/MrTrustworthy/auri',
-    download_url='https://github.com/MrTrustworthy/auri/archive/0.1.0.tar.gz',
+    download_url=f'https://github.com/MrTrustworthy/auri/archive/{VERSION}.tar.gz',
     license='MIT',
     install_requires=['requests', 'colorama', 'pillow', 'jsonschema', 'click'],
     author='MrTrustworthy',
