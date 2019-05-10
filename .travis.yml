@@ -16,14 +16,7 @@ script:
   - twine upload dist/* -r testpypi -u $TESTPYPI_USER -p $TESTPYPI_PASS
 
   - python3 -m virtualenv venv_test
-  - . venv_test/bin/activate
   - pip install auri --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple
   - auri device list
-  - echo "Nice, no errors in dev :)"
-  - deactivate
-  - rm -rf venv_test
-
+  - echo "Nice, no errors in dev - on to production you noble piece of software!"
   - twine upload dist/* -u $PYPI_USER -p $PYPI_PASS
-  - pip install auri --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple
-  - auri device list
-  - echo "Nice, no errors in prod :)"

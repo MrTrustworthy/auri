@@ -7,9 +7,13 @@ from warnings import warn
 
 import click
 import requests
-from PIL import ImageGrab
 
-from auri.aurora import Aurora
+try:
+    from PIL import ImageGrab
+except ImportError as e:
+    ImageGrab = None
+
+from auri.aurora import Aurora, AuroraException
 
 Color = Tuple[int, int, int]
 Template = Dict[str, Any]
@@ -61,6 +65,9 @@ class AmbilightController:
             warn("Quantization is less than top, which doesn't make sense. "
                  f"Reducing top to match quantization ({self._quantization})")
             self._top = self._quantization
+
+        if ImageGrab is None:
+            raise AuroraException("Sorry, but Ambilight only works on Windows and MacOS currently :(")
 
     def run_ambi_loop(self):
         """Runs a refresh in a continuous loop and will not return normally"""
