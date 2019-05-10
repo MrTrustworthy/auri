@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='auri',
-    version='0.1.6',
+    version='0.1.7',
     packages=['auri'],
     url='https://github.com/MrTrustworthy/auri',
     download_url='https://github.com/MrTrustworthy/auri/archive/0.1.0.tar.gz',
