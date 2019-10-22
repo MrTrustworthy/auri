@@ -5,7 +5,7 @@ Click==7.0
 colorama==0.4.1
 idna==2.8
 jsonschema==3.0.1
-Pillow==5.4.1
+Pillow==6.2.0
 pyrsistent==0.15.1
 requests==2.21.0
 six==1.12.0
