@@ -127,26 +127,22 @@ def effects_group():
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def effects_play_command(name: str, aurora: str, verbose: bool):
-    aurora = DeviceManager().get_by_name_or_active(aurora)
+    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
     effect_name = " ".join(name)
 
     if effect_name.lower() == "auriambi":
         # TODO: could probably also forward this to ambi automatically
         click.echo("WARNING: Playing AuriAmbi doesn't activate the Ambi function, use `auri effects ambi` instead!")
 
-    try:
-        aurora.set_active_effect(effect_name)
-    except AuroraException:
-        if verbose:
-            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
-        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1, cutoff=0)
-        if len(closest) == 0:
-            # As long as there is a single effect, this should not happen
-            click.echo(f"Did not find anything similar to {effect_name}, are there no effects on this device?")
-            return
-        effect_name = closest[0]
-        aurora.set_active_effect(effect_name)
-    click.echo(f"Set current effect to {effect_name}")
+    closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1, cutoff=0)
+    if len(closest) == 0:
+        # As long as there is a single effect, this should not happen
+        click.echo(f"Did not find anything similar to {effect_name}, are there no effects on this device?")
+        return
+    effect_name = closest[0]
+    effect = aurora.get_effect_by_name(effect_name)
+    aurora.set_active_effect(effect_name)
+    click.echo(f"Set current effect to {effect_name} {effect.color_flag_terminal()}")
 
 
 @effects_group.command(name="delete", help="Deletes a specified effect. Warning: This isn't reversible!")
@@ -160,16 +156,9 @@ def effects_delete_command(name: str, aurora: str, verbose: bool):
 
     try:
         aurora.delete_effect(effect_name)
+        click.echo(f"Deleted effect {effect_name}")
     except AuroraException:
-        if verbose:
-            click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
-        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
-        if len(closest) == 0:
-            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
-            return
-        effect_name = closest[0]
-        aurora.delete_effect(effect_name)
-    click.echo(f"Deleted effect {effect_name}")
+        click.echo(f"Did not find effect with name {effect_name}")
 
 
 @effects_group.command(name="get", help="Gets either name or brightness of the current effect")

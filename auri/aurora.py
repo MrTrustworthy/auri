@@ -190,6 +190,9 @@ class Aurora:
         animation_data = effect_data.get("animations", [])
         return sorted((Effect(data) for data in animation_data), key=lambda e: e.name)
 
+    def get_effect_by_name(self, name: str) -> Effect:
+        return next(filter(lambda e: e.name == name, self.get_effects()))
+
     def get_effect_names(self) -> List[str]:
         return [e.name for e in self.get_effects()]
 
