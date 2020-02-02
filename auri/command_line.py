@@ -17,7 +17,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.1.2")
+@click.version_option("1.1.3")
 def cli():
     pass
 
@@ -246,7 +246,7 @@ def effects_ambi_start(delay: int, top: int, quantization: int, aurora: str, gre
     # TODO: find an approach that also works if ambi isn't available via global `ambi`, such as `python -m ambi`
     # TODO: Whenever the name/call-path of this command changes, this also has to be adjusted :(
     process = subprocess.Popen(
-        ['auri', 'ambi', 'start', "-v"],
+        ['auri', 'ambi', 'start', "-b"],
         cwd="/",
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
