@@ -5,9 +5,6 @@ from requests import HTTPError
 
 from auri.effects import Effect
 
-IMAGE_SIZE = 64
-FLAG_TILES = 10  # How many "characters" of color to show in terminal, will wrap around if less colors exist
-
 
 class AuroraException(Exception):
     pass

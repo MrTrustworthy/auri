@@ -5,18 +5,18 @@ dist: xenial   # required for Python >= 3.7
 
 branches:
   only:
-    master
+    - master
 
 install:
-  - pip install twine
+  - pip install poetry
 
 script:
-  - python3 setup.py sdist bdist_wheel
-  - twine check dist/*
-  - twine upload dist/* -r testpypi -u $TESTPYPI_USER -p $TESTPYPI_PASS
+  - poetry build
+  - poetry config repositories.testpypi https://test.pypi.org/simple
+  - poetry publish -r testpypi -u $TESTPYPI_USER -p $TESTPYPI_PASS -n
 
-  - python3 -m virtualenv venv_test
   - pip install auri --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple
   - auri device list
   - echo "Nice, no errors in dev - on to production you noble piece of software!"
-  - twine upload dist/* -u $PYPI_USER -p $PYPI_PASS
+
+  - poetry publish -u $PYPI_USER -p $PYPI_PASS -n
