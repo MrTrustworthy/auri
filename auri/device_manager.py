@@ -1,7 +1,7 @@
 import json
 import os
 from os.path import expanduser
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 
 import jsonschema
 import click
@@ -41,6 +41,8 @@ ENV_IMAGE_PATH = "AURI_IMAGE_PATH"
 DEFAULT_IMAGE_PATH = "~/.config/auri"
 ENV_IMAGE_FILETYPE = "AURI_IMAGE_FILETYPE"
 DEFAULT_IMAGE_FILETYPE = ".jpg"
+ENV_PID_PATH = "AURI_PID_PATH"
+DEFAULT_PID_PATH = "~/.config/auri/ambi.pid"
 
 
 class DeviceNotExistsException(Exception):
@@ -52,6 +54,7 @@ class DeviceManager:
 
     def __init__(self, verbose: bool = False):
         self.conf_path = expanduser(os.getenv(ENV_CONF_PATH, DEFAULT_CONF_PATH))
+        self.pid_path = expanduser(os.getenv(ENV_PID_PATH, DEFAULT_PID_PATH))
         self.image_path = expanduser(os.getenv(ENV_IMAGE_PATH, DEFAULT_IMAGE_PATH))
         self.image_file_ending = os.getenv(ENV_IMAGE_FILETYPE, DEFAULT_IMAGE_FILETYPE)
         self.verbose = verbose
@@ -229,3 +232,22 @@ class DeviceManager:
     def _clear_all_actives(configs: AuroraConfigs):
         for ip, data in configs.items():
             data["active"] = False
+
+    # Handle PID management for the ambi function
+
+    def save_pid(self, pid: int):
+        os.makedirs(os.path.dirname(self.pid_path), exist_ok=True)  # On first run, make sure the path exists
+        with open(self.pid_path, "w") as outfile:
+            outfile.write(str(pid))
+
+    def load_pid(self) -> Union[int, None]:
+        os.makedirs(os.path.dirname(self.pid_path), exist_ok=True)  # On first run, make sure the path exists
+        try:
+            with open(self.pid_path, "r") as infile:
+                val = infile.readline()
+        # if load is called before save(), we'll just return None as well
+        except FileNotFoundError as e:
+            val = None
+        if not val:
+            return None
+        return int(val)
