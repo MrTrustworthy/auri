@@ -17,7 +17,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.1.1")
+@click.version_option("1.1.2")
 def cli():
     pass
 
@@ -266,7 +266,7 @@ def effects_ambi_stop():
     try:
         os.kill(pid, signal.SIGKILL)
     except ProcessLookupError:
-        click.echo("Could not find a process with PID {pid}, maybe it was already killed?")
+        click.echo(f"Could not find a process with PID {pid}, maybe it was already killed?")
         return
     click.echo("auri ambi stopped")
 
