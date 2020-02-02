@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "auri"
-version = "0.2.2"
+version = "1.0.0"
 description = "CLI to control Nanoleaf Aurora devices"
 authors = ["MrTrustworthy <tinywritingmakesmailhardtoread@gmail.com>"]
 license = "MIT"
