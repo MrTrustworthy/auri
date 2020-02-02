@@ -7,7 +7,7 @@ A simple, light-weight tool for controlling multiple Aurora devices from the CLI
 
 ### Installation
 
-As it's a Python3-based application, you can install the CLI via it's package manager if you're using Python already. If you're on MacOS, you can use `brew` to install it instead.
+As it's a Python3-based application, you can install the CLI simply via `pip`. `pip install auri` or `python3 -m pip install auri` (if your default pip is for Python2) are both acceptable ways of installing.
 
 ### Device Setup
 
@@ -31,6 +31,7 @@ There is a built-in ambilight functionality that is based on your primary displa
 
 You can customize the behaviour of the ambilight, just use `auri effects ambi --help` to see which parameters you can play with, though the default settings work quite nice.
 
+The Ambilight functionality only works on MacOS and Windows (untested), but not on Linux due to the dependency on `ImageGrab`. If you're using Linux and know of a way to get this working, feel free to shoot me a PR.
 
 ### Alfred Integration
 
