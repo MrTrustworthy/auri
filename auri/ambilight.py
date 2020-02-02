@@ -69,20 +69,20 @@ class AmbilightController:
         if ImageGrab is None:
             raise AuroraException("Sorry, but Ambilight only works on Windows and MacOS currently :(")
 
-    def run_ambi_loop(self):
+    def run_ambi_loop(self) -> None:
         """Runs a refresh in a continuous loop and will not return normally"""
 
         while True:
             start = time.time()
             try:
                 self.set_effect_to_current_screen_colors()
-            except requests.exceptions.RequestException as e:
+            except (requests.exceptions.RequestException, AuroraException) as e:
                 click.echo(f"[{datetime.datetime.now()}] Got an exception when trying to update the image: {str(e)}")
             if self.verbose > 0:
                 click.echo(f"Updating effect took {time.time()-start} seconds")
             time.sleep(self._delay)
 
-    def set_effect_to_current_screen_colors(self):
+    def set_effect_to_current_screen_colors(self) -> None:
         """Returns a list of the top-N colors the main monitor currently shows in HSV-format"""
         colors = self._get_current_display_image_colors()
 

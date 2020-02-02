@@ -14,7 +14,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.0.0")
+@click.version_option("0.2.0")
 def cli():
     pass
 
@@ -22,12 +22,12 @@ def cli():
 # AURORA AND CONTEXT MANAGEMENT
 
 
-@cli.group(name="device")
+@cli.group(name="device", help="Interact with Nanoleaf devices")
 def device_group():
     pass
 
 
-@device_group.command()
+@device_group.command(name="activate", help="Set a specified Nanoleaf to the currently active one")
 @click.argument("name", nargs=-1)
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def activate(name: str, verbose: bool):
@@ -36,7 +36,7 @@ def activate(name: str, verbose: bool):
     click.echo(f"Set {name} as active Aurora")
 
 
-@device_group.command(name="list")
+@device_group.command(name="list", help="Lists all currently configured Nanoleaf devices")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def device_list_command(verbose: bool):
     manager = DeviceManager(verbose=verbose)
@@ -45,15 +45,7 @@ def device_list_command(verbose: bool):
         click.echo(f"{active} {str(aurora)}")
 
 
-@device_group.command(name="images")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def device_images_command(verbose: bool):
-    manager = DeviceManager(verbose=verbose)
-    manager.generate_image_cache()
-    click.echo(f"Generated images into {manager.image_path}")
-
-
-@device_group.command(name="query")
+@device_group.command(name="query", help="Query the Nanoleaf device with a custom attribute for debugging")
 @click.argument("option", default="info")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -68,21 +60,21 @@ def device_query_command(option: str, aurora: str, verbose: bool):
         click.echo(f"Operator '{option}' doesn't exist")
 
 
-@device_group.command(name="on")
+@device_group.command(name="on", help="Turn on the active device")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def device_on_command(aurora: str, verbose: bool):
-    DeviceManager().get_by_name_or_active(aurora).on = True
+    DeviceManager(verbose=verbose).get_by_name_or_active(aurora).on = True
 
 
-@device_group.command(name="off")
+@device_group.command(name="off", help="Turn off the active device")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def device_off_command(aurora: str, verbose: bool):
-    DeviceManager().get_by_name_or_active(aurora).on = False
+    DeviceManager(verbose=verbose).get_by_name_or_active(aurora).on = False
 
 
-@device_group.command(name="setup")
+@device_group.command(name="setup", help="Run this to configure new Nanoleaf devices")
 @click.option("-a", "--amount", default=1, show_default=True,
               help="How many Auroras to search for. Set this to the number of Auroras that are in your WLAN")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -91,9 +83,7 @@ def device_setup_command(amount: int, verbose: bool):
     manager = DeviceManager(verbose=verbose)
 
     for aurora_ip, aurora_mac in DeviceFinder(verbose=verbose).find_aurora_addresses(amount):
-
         aurora_description = f"{aurora_ip} (MAC: {aurora_mac})"
-
         click.echo(f"Found one Aurora at {aurora_description}")
 
         # let's find out if a device with that IP is already configured and offer to change the name
@@ -106,7 +96,6 @@ def device_setup_command(amount: int, verbose: bool):
 
         aurora_name = click.prompt(f"Please give this Aurora a name:", default="My Nanoleaf" if name is None else name)
         aurora = Aurora(aurora_ip, aurora_name, aurora_mac, None)  # Token and name will be set later
-
         click.echo(f"Continuing setup for Aurora at {aurora_description}")
 
         while True:
@@ -119,7 +108,6 @@ def device_setup_command(amount: int, verbose: bool):
                 click.echo(f"Could not generate token, error was: {str(e)}. Please try again")
 
         click.echo("Token was successfully generated, adding Aurora to the config")
-
         manager.save_aurora(aurora)
         click.echo(f"Aurora was saved to config. You can find it in {manager.conf_path}")
 
@@ -129,33 +117,39 @@ def device_setup_command(amount: int, verbose: bool):
 # EFFECT MANAGEMENT
 
 
-@cli.group(name="effects")
+@cli.group(name="effects", help="Interact with effects of the current device")
 def effects_group():
     pass
 
 
-@effects_group.command(name="play")
+@effects_group.command(name="play", help="Switches the device to a specific effect. Uses spelling correction.")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def effects_play_command(name: str, aurora: str, verbose: bool):
     aurora = DeviceManager().get_by_name_or_active(aurora)
     effect_name = " ".join(name)
+
+    if effect_name.lower() == "auriambi":
+        # TODO: could probably also forward this to ambi automatically
+        click.echo("WARNING: Playing AuriAmbi doesn't activate the Ambi function, use `auri effects ambi` instead!")
+
     try:
         aurora.set_active_effect(effect_name)
     except AuroraException:
         if verbose:
             click.echo(f"Did not find effect with name {effect_name} (case sensitive), trying closest match")
-        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1)
+        closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1, cutoff=0)
         if len(closest) == 0:
-            click.echo(f"Did not find effect with name {effect_name} and could not find a similar name")
+            # As long as there is a single effect, this should not happen
+            click.echo(f"Did not find anything similar to {effect_name}, are there no effects on this device?")
             return
         effect_name = closest[0]
         aurora.set_active_effect(effect_name)
     click.echo(f"Set current effect to {effect_name}")
 
 
-@effects_group.command(name="delete")
+@effects_group.command(name="delete", help="Deletes a specified effect. Warning: This isn't reversible!")
 @click.argument("name", nargs=-1)
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -178,7 +172,7 @@ def effects_delete_command(name: str, aurora: str, verbose: bool):
     click.echo(f"Deleted effect {effect_name}")
 
 
-@effects_group.command(name="get")
+@effects_group.command(name="get", help="Gets either name or brightness of the current effect")
 @click.argument("option")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -193,7 +187,7 @@ def effects_get_command(option: str, aurora: str, verbose: bool):
     click.echo(output)
 
 
-@effects_group.command(name="set")
+@effects_group.command(name="set", help="Sets either name or brightness of the current effect")
 @click.argument("option")
 @click.argument("value")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
@@ -211,7 +205,7 @@ def effects_set_command(option: str, value: str, aurora: str, verbose: bool):
     click.echo(f"Set {option} to {value}")
 
 
-@effects_group.command(name="list")
+@effects_group.command(name="list", help="Displays all effects that are currently installed on this device")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-n", "--names", is_flag=True, default=False, help="Only prints the effect names and exits")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
@@ -230,7 +224,7 @@ def effects_list_command(aurora: str, names: bool, verbose: bool):
         click.echo(f"{active} {effect.color_flag_terminal()} {effect.name}")
 
 
-@effects_group.command(name="ambi")
+@effects_group.command(name="ambi", help="Activates the ambilight functionality")
 @click.option("-d", "--delay", default=1, show_default=True,
               help="Effect update delay in seconds")
 @click.option("-t", "--top", default=10, show_default=True,
@@ -249,12 +243,12 @@ def effects_ambi_command(delay: int, top: int, quantization: int, aurora: str, g
 
 # ALFRED WORKFLOW HELPERS
 
-@cli.group(name="alfred")
+@cli.group(name="alfred", help="Alfred integration functions")
 def alfred_group():
     pass
 
 
-@alfred_group.command(name="prompt")
+@alfred_group.command(name="prompt", help="Alfred prompt in JSON format")
 def alfred_prompt_command():
     manager = DeviceManager()
     aurora = manager.get_active()
@@ -275,12 +269,20 @@ def alfred_prompt_command():
     click.echo(json.dumps({"items": data}))
 
 
-@alfred_group.command(name="command")
+@alfred_group.command(name="command", help="Parse command from `auri alfred prompt`")
 @click.argument("command", nargs=-1)
 @click.pass_context
 def alfred_command_command(ctx, command: str):
     command_string = " ".join(command)
     ctx.invoke(effects_set_command, name=command_string)
+
+
+@alfred_group.command(name="images", help="Generates image files for each effect")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def alfred_images_command(verbose: bool):
+    manager = DeviceManager(verbose=verbose)
+    manager.generate_image_cache()
+    click.echo(f"Generated images into {manager.image_path}")
 
 
 if __name__ == '__main__':

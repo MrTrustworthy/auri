@@ -18,7 +18,7 @@ class DeviceFinder:
         self.verbose = verbose
 
     def find_aurora_addresses(self, search_for_amount: int = 10) -> Generator[Tuple[str, str], None, None]:
-        """Returns a list of the (IP, MAC addresses of all Auroras found on the network"""
+        """Returns a list of the (IP, MAC) addresses of all Auroras found on the network"""
 
         aurora_ips = []
         aurora_socket = self._prepare_socket()
@@ -27,7 +27,7 @@ class DeviceFinder:
             aurora_ip = DeviceFinder._get_aurora_ip_from_response(response)
             if aurora_ip is None or aurora_ip in aurora_ips:
                 if self.verbose:
-                    click.echo(f"Got response about device at {aurora_ip}, but skipping it as it's not needed")
+                    click.echo(f"Got response about device at {aurora_ip}, but skipping it as it's not useful")
                 continue
             if self.verbose:
                 click.echo(f"Found new device at {aurora_ip}, using its address")

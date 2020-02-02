@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "auri"
+version = "0.2.0"
+description = "CLI to control Nanoleaf Aurora devices"
+authors = ["MrTrustworthy <tinywritingmakesmailhardtoread@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/MrTrustworthy/auri"
+keywords = ["Aurora", "Nanoleaf", "cli", "commandline"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.7"
+  ]
+
+include = [
+  "README.md",
+  "LICENSE",
+  "pyproject.toml"
+  ]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+requests = "^2.22.0"
+pillow = "^7.0.0"
+click = "^7.0"
+jsonschema = "^3.2.0"
+
+[build-system]
+requires = ["poetry>=1.0.2"]
+build-backend = "poetry.masonry.api"
+
+[tool.black]
+line-length = 119
+target_version = ['py36']
+include = '\.pyi?$'
+
+[tool.poetry.scripts]
+auri = "auri.command_line:cli"

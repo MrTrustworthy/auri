@@ -5,7 +5,8 @@ from typing import Dict, Union, List
 
 import jsonschema
 import click
-from auri.aurora import Aurora, Effect
+from auri.aurora import Aurora
+from auri.effects import Effect
 
 # A serialized configuration looks like this
 # { "192.168.0.255": {
@@ -193,7 +194,7 @@ class DeviceManager:
             return
 
         click.echo(f"There are {active_auroras} active Auroras, "
-                   "repairing configs automatically now to ensure exactly 1 Aurora is active")
+                   "reconciling automatically to ensure exactly 1 Aurora is active")
 
         self._clear_all_actives(configs)
 
