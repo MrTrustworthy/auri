@@ -220,55 +220,25 @@ def effects_list_command(aurora: str, names: bool, verbose: bool):
 def ambi_group():
     pass
 
+
 # TODO the additional arguments only work when being run in blocking mode, move them to the config
 @ambi_group.command(name="start", help="Activates the ambilight functionality")
-@click.option("-d", "--delay", default=1, show_default=True,
-              help="Effect update delay in seconds")
-@click.option("-t", "--top", default=10, show_default=True,
-              help="How many of the quantized colors should be used for the effect")
-@click.option("-q", "--quantization", default=10, show_default=True,
-              help="In how many different colors should the screen be broken down to")
-@click.option("-g", "--greyness", default=10, show_default=True,
-              help="How 'grey' can something be before it will be filtered out")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-@click.option("-b", "--block", is_flag=True, default=False, help="Block the CLI while running ambi")
-def effects_ambi_start(delay: int, top: int, quantization: int, aurora: str, greyness: int, verbose: bool,
-                         block: bool):
+@click.option("-b", "--block", is_flag=True, default=False, help="Block the shell while running ambi")
+def effects_ambi_start(aurora: str, verbose: bool, block: bool):
     device_manager = DeviceManager(verbose=verbose)
     aurora = device_manager.get_by_name_or_active(aurora)
-
-    # The non-blocking call of `ambi play` will start the blocking call as a daemon/subprocess
-    if block:
-        AmbilightController(aurora, quantization, top, greyness, delay, verbose=verbose).run_ambi_loop()
-        return
-
-    # TODO: find an approach that also works if ambi isn't available via global `ambi`, such as `python -m ambi`
-    # TODO: Whenever the name/call-path of this command changes, this also has to be adjusted :(
-    process = subprocess.Popen(
-        ['auri', 'ambi', 'start', "-b"],
-        cwd="/",
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-        close_fds=True,
-    )
-    device_manager.save_pid(process.pid)
-    click.echo("auri ambi started")
+    AmbilightController(aurora, device_manager, verbose=verbose).start(blocking=block)
 
 
 @ambi_group.command(name="stop", help="Stops the ambilight functionality")
-def effects_ambi_stop():
-    pid = DeviceManager().load_pid()
-    if pid is None:
-        click.echo("Could not find a running `ambi`")
-        return
-    try:
-        os.kill(pid, signal.SIGKILL)
-    except ProcessLookupError:
-        click.echo(f"Could not find a process with PID {pid}, maybe it was already killed?")
-        return
-    click.echo("auri ambi stopped")
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+def effects_ambi_stop(aurora: str, verbose: bool):
+    device_manager = DeviceManager(verbose=verbose)
+    aurora = device_manager.get_by_name_or_active(aurora)
+    AmbilightController(aurora, device_manager, verbose=verbose).stop()
 
 
 # ALFRED WORKFLOW HELPERS

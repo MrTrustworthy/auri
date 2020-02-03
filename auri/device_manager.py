@@ -246,7 +246,7 @@ class DeviceManager:
             with open(self.pid_path, "r") as infile:
                 val = infile.readline()
         # if load is called before save(), we'll just return None as well
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             val = None
         if not val:
             return None

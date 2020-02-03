@@ -1,4 +1,7 @@
 import datetime
+import os
+import signal
+import subprocess
 import time
 from colorsys import rgb_to_hsv
 from functools import lru_cache
@@ -8,12 +11,13 @@ from warnings import warn
 import click
 import requests
 
+from auri.device_manager import DeviceManager
+from auri.aurora import Aurora, AuroraException
+
 try:
     from PIL import ImageGrab
 except ImportError as e:
     ImageGrab = None
-
-from auri.aurora import Aurora, AuroraException
 
 Color = Tuple[int, int, int]
 Template = Dict[str, Any]
@@ -40,26 +44,30 @@ EFFECT_TEMPLATE: Template = {
     "loop": True
 }
 
+PROPERTY_TEMPLATE: Template = {
+    "delay": 1,  # As each pixel might have a slightly different color, quantization is used to reduce the colors
+    "top": 10,  # How many of the top colors to use for the nanoleaf
+    "quantization": 10,
+    # How grey (according to HSV saturation) can something be before it's filtered out into a set of similar colors
+    # Setting this lower means having more different colors show up in the result
+    "greyness": 10  # how long to pause between re-applying the current desktop image
+}
+
 
 class AmbilightController:
 
-    def __init__(self, aurora: Aurora, quantization: int, top: int, greyness: int, delay: int, verbose: bool = False):
+    def __init__(self, aurora: Aurora, device_manager: DeviceManager, verbose: bool = False):
         """
-
         :param aurora: Instance of the Nanoleaf device to use
-        :param quantization: As each pixel might have a slightly different color, quantization is used to reduce the colors
-            into a set of similar colors. Setting this lower means having more different colors show up in the result
-        :param top: How many of the top colors to use for the nanoleaf
-        :param greyness: How grey (according to HSV saturation) can something be before it's filtered out
-        :param delay: how long to pause between re-applying the current desktop image
         :param verbose: logging detail
         """
         self._aurora = aurora
-        self._quantization = quantization
-        self._top = top
-        self._greyness = greyness
-        self._delay = delay
+        self._quantization = PROPERTY_TEMPLATE["quantization"]
+        self._top = PROPERTY_TEMPLATE["top"]
+        self._greyness = PROPERTY_TEMPLATE["greyness"]
+        self._delay = PROPERTY_TEMPLATE["delay"]
         self.verbose = verbose
+        self.device_manager = device_manager
 
         if self._quantization < self._top:
             warn("Quantization is less than top, which doesn't make sense. "
@@ -69,9 +77,41 @@ class AmbilightController:
         if ImageGrab is None:
             raise AuroraException("Sorry, but Ambilight only works on Windows and MacOS currently :(")
 
-    def run_ambi_loop(self) -> None:
-        """Runs a refresh in a continuous loop and will not return normally"""
+    def start(self, blocking: bool):
+        """Starts a new process that calls itself in blocking mode as a separate process"""
+        if blocking:
+            self._run_ambi_loop()
+            click.echo("auri ambi started in blocking mode")
 
+        # in case anyone tries to start it twice, run `stop()` before to be safe (which is idempotent)
+        self.stop()
+
+        # TODO: find an approach that also works if ambi isn't available via global `ambi`, such as `python -m ambi`
+        # TODO: Whenever the name/call-path of this command changes, this also has to be adjusted :(
+        process = subprocess.Popen(
+            ['auri', 'ambi', 'start', "-b"],
+            cwd="/",
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+            close_fds=True,
+        )
+        self.device_manager.save_pid(process.pid)
+        click.echo("auri ambi started")
+
+    def stop(self):
+        """Stop a running ambi process. If none is found, will do nothing"""
+        pid = self.device_manager.load_pid()
+        if pid is None:
+            click.echo("Could not find a running `ambi`")
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            click.echo(f"Could not find a process with PID {pid}, maybe it was already killed?")
+        click.echo("auri ambi stopped")
+
+    def _run_ambi_loop(self) -> None:
+        """Runs a refresh in a continuous loop and will not return normally"""
         while True:
             start = time.time()
             try:
@@ -79,7 +119,7 @@ class AmbilightController:
             except (requests.exceptions.RequestException, AuroraException) as e:
                 click.echo(f"[{datetime.datetime.now()}] Got an exception when trying to update the image: {str(e)}")
             if self.verbose > 0:
-                click.echo(f"Updating effect took {time.time()-start} seconds")
+                click.echo(f"Updating effect took {time.time() - start} seconds")
             time.sleep(self._delay)
 
     def set_effect_to_current_screen_colors(self) -> None:
