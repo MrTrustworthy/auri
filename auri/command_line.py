@@ -7,7 +7,7 @@ from difflib import get_close_matches
 
 import click
 
-from auri.ambilight import AmbilightController
+from auri.ambilight_controller import AmbilightController
 from auri.aurora import Aurora, AuroraException
 from auri.device_finder import DeviceFinder
 from auri.device_manager import DeviceManager
@@ -17,7 +17,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.1.3")
+@click.version_option("1.2.0")
 def cli():
     pass
 
@@ -227,18 +227,18 @@ def ambi_group():
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 @click.option("-b", "--block", is_flag=True, default=False, help="Block the shell while running ambi")
 def effects_ambi_start(aurora: str, verbose: bool, block: bool):
-    device_manager = DeviceManager(verbose=verbose)
-    aurora = device_manager.get_by_name_or_active(aurora)
-    AmbilightController(aurora, device_manager, verbose=verbose).start(blocking=block)
+    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+    AmbilightController(aurora, verbose=verbose).start(blocking=block)
+    click.echo("auri ambi started")
 
 
 @ambi_group.command(name="stop", help="Stops the ambilight functionality")
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 def effects_ambi_stop(aurora: str, verbose: bool):
-    device_manager = DeviceManager(verbose=verbose)
-    aurora = device_manager.get_by_name_or_active(aurora)
-    AmbilightController(aurora, device_manager, verbose=verbose).stop()
+    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+    AmbilightController(aurora, verbose=verbose).stop()
+    click.echo("auri ambi stopped")
 
 
 # ALFRED WORKFLOW HELPERS
