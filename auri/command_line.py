@@ -14,7 +14,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.2.1")
+@click.version_option("1.2.2")
 def cli():
     pass
 

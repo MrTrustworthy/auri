@@ -59,7 +59,7 @@ class AmbilightController:
         self.settings_path = expanduser(os.getenv(ENV_SETTINGS_PATH, DEFAULT_SETTINGS_PATH))
         self.verbose = verbose
         self.settings = self._load_settings()
-        self.ambilight = Ambilight(aurora, self.settings["config"], self.settings["config"], verbose=verbose)
+        self.ambilight = Ambilight(aurora, self.settings["config"], self.settings["effect_template"], verbose=verbose)
 
     def start(self, blocking: bool):
         """Starts a new process that calls itself in blocking mode as a separate process"""
