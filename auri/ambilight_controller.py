@@ -66,6 +66,7 @@ class AmbilightController:
         if blocking:
             self.ambilight.run_ambi_loop()
             click.echo("auri ambi started in blocking mode")
+            return
 
         # in case anyone tries to start it twice, run `stop()` before to be safe (which is idempotent)
         self.stop()

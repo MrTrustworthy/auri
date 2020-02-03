@@ -1,7 +1,4 @@
 import json
-import os
-import signal
-import subprocess
 import sys
 from difflib import get_close_matches
 
@@ -17,7 +14,7 @@ from auri.device_manager import DeviceManager
 # TODO catch config and aurora exceptions and print them nicely
 
 @click.group()
-@click.version_option("1.2.0")
+@click.version_option("1.2.1")
 def cli():
     pass
 
