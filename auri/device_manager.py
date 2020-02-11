@@ -88,12 +88,9 @@ class DeviceManager:
         :param name: The name to use for searching, might be `None` if the active should just be used
         :return: The Aurora to use for commands
         """
-        try:
-            return self.get_by_name(name)
-        except DeviceNotExistsException:
-            if self.verbose:
-                click.echo(f"Found no Aurora with the name {name}, attempting to use active instead")
+        if name is None:
             return self.get_active()
+        return self.get_by_name(name)
 
     def get_by_name(self, name: str) -> Aurora:
         configs = self._load_configs()

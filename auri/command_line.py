@@ -1,6 +1,7 @@
 import json
 import sys
 from difflib import get_close_matches
+from typing import Union
 
 import click
 
@@ -13,10 +14,28 @@ from auri.device_manager import DeviceManager
 # TODO create wrapper or validator that checks we have a valid default/named aurora and redirects to setup if needed
 # TODO catch config and aurora exceptions and print them nicely
 
+class CtxObj:
+    def __init__(self, aurora: Union[str, None], verbose: bool = False):
+        self.dm = DeviceManager(verbose=verbose)
+        self.aurora_name = aurora
+        self.__aurora = None
+        self.verbose = verbose
+
+    @property
+    def aurora(self):
+        """Lazily create the actual aurora object when it's needed"""
+        if not self.__aurora:
+            self.__aurora = self.dm.get_by_name_or_active(self.aurora_name)
+        return self.__aurora
+
+
 @click.group()
+@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
+@click.pass_context
 @click.version_option("1.2.2")
-def cli():
-    pass
+def cli(ctx, aurora: Union[str, None], verbose: bool):
+    ctx.obj = CtxObj(aurora, verbose)
 
 
 # AURORA AND CONTEXT MANAGEMENT
@@ -29,49 +48,30 @@ def device_group():
 
 @device_group.command(name="activate", help="Set a specified Nanoleaf to the currently active one")
 @click.argument("name", nargs=-1)
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def activate(name: str, verbose: bool):
+@click.pass_obj
+def activate(obj, name: str):
     name = " ".join(name)
-    DeviceManager(verbose=verbose).set_active(name)
+    obj.dm.set_active(name)
     click.echo(f"Set {name} as active Aurora")
 
 
 @device_group.command(name="list", help="Lists all currently configured Nanoleaf devices")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def device_list_command(verbose: bool):
-    manager = DeviceManager(verbose=verbose)
-    for aurora in manager.get_all():
-        active = "[X]" if manager.is_active(aurora) else "[ ]"
+@click.pass_obj
+def device_list_command(obj):
+    for aurora in obj.dm.get_all():
+        active = "[X]" if obj.dm.is_active(aurora) else "[ ]"
         click.echo(f"{active} {str(aurora)}")
 
-
-@device_group.command(name="query", help="Query the Nanoleaf device with a custom attribute for debugging")
-@click.argument("option", default="info")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def device_query_command(option: str, aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
-    try:
-        result = getattr(aurora, option)
-        if callable(result):
-            result = result()
-        click.echo(str(result))
-    except AttributeError:
-        click.echo(f"Operator '{option}' doesn't exist")
-
-
 @device_group.command(name="on", help="Turn on the active device")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def device_on_command(aurora: str, verbose: bool):
-    DeviceManager(verbose=verbose).get_by_name_or_active(aurora).on = True
+@click.pass_obj
+def device_on_command(obj):
+    obj.aurora.on = True
 
 
 @device_group.command(name="off", help="Turn off the active device")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def device_off_command(aurora: str, verbose: bool):
-    DeviceManager(verbose=verbose).get_by_name_or_active(aurora).on = False
+@click.pass_obj
+def device_off_command(obj):
+    obj.aurora.on = False
 
 
 @device_group.command(name="setup", help="Run this to configure new Nanoleaf devices")
@@ -124,38 +124,34 @@ def effects_group():
 
 @effects_group.command(name="play", help="Switches the device to a specific effect. Uses spelling correction.")
 @click.argument("name", nargs=-1)
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_play_command(name: str, aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+@click.pass_obj
+def effects_play_command(obj, name: str):
     effect_name = " ".join(name)
 
     if effect_name.lower() == "auriambi":
         # TODO: could probably also forward this to ambi automatically
         click.echo("WARNING: Playing AuriAmbi doesn't activate the Ambi function, use `auri effects ambi` instead!")
 
-    closest = get_close_matches(effect_name, aurora.get_effect_names(), n=1, cutoff=0)
+    closest = get_close_matches(effect_name, obj.aurora.get_effect_names(), n=1, cutoff=0)
     if len(closest) == 0:
         # As long as there is a single effect, this should not happen
         click.echo(f"Did not find anything similar to {effect_name}, are there no effects on this device?")
         return
     effect_name = closest[0]
-    effect = aurora.get_effect_by_name(effect_name)
-    aurora.set_active_effect(effect_name)
+    effect = obj.aurora.get_effect_by_name(effect_name)
+    obj.aurora.set_active_effect(effect_name)
     click.echo(f"Set current effect to {effect_name} {effect.color_flag_terminal()}")
 
 
 @effects_group.command(name="delete", help="Deletes a specified effect. Warning: This isn't reversible!")
 @click.argument("name", nargs=-1)
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_delete_command(name: str, aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+@click.pass_obj
+def effects_delete_command(obj, name: str):
     effect_name = " ".join(name)
-    click.confirm(f"This will delete the effect '{effect_name}' from {aurora}, are you sure?", abort=True)
+    click.confirm(f"This will delete the effect '{effect_name}' from {obj.aurora}, are you sure?", abort=True)
 
     try:
-        aurora.delete_effect(effect_name)
+        obj.aurora.delete_effect(effect_name)
         click.echo(f"Deleted effect {effect_name}")
     except AuroraException:
         click.echo(f"Did not find effect with name {effect_name}")
@@ -163,15 +159,13 @@ def effects_delete_command(name: str, aurora: str, verbose: bool):
 
 @effects_group.command(name="get", help="Gets either name or brightness of the current effect")
 @click.argument("option")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_get_command(option: str, aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+@click.pass_obj
+def effects_get_command(obj, option: str):
     output = f"Couldn't find option {option} for `effects get"
     if option == "name":
-        output = aurora.get_active_effect_name()
+        output = obj.aurora.get_active_effect_name()
     elif option == "brightness":
-        output = aurora.brightness
+        output = obj.aurora.brightness
 
     click.echo(output)
 
@@ -179,14 +173,12 @@ def effects_get_command(option: str, aurora: str, verbose: bool):
 @effects_group.command(name="set", help="Sets either name or brightness of the current effect")
 @click.argument("option")
 @click.argument("value")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_set_command(option: str, value: str, aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
+@click.pass_obj
+def effects_set_command(obj, option: str, value: str):
     if option == "brightness":
-        aurora.brightness = int(value)
+        obj.aurora.brightness = int(value)
     elif option == "identify":
-        aurora.identify()
+        obj.aurora.identify()
     else:
         click.echo(f"Couldn't find the option {option}")
         sys.exit(1)
@@ -195,13 +187,11 @@ def effects_set_command(option: str, value: str, aurora: str, verbose: bool):
 
 
 @effects_group.command(name="list", help="Displays all effects that are currently installed on this device")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
 @click.option("-n", "--names", is_flag=True, default=False, help="Only prints the effect names and exits")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_list_command(aurora: str, names: bool, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
-    active_effect_name = aurora.get_active_effect_name()
-    for effect in aurora.get_effects():
+@click.pass_obj
+def effects_list_command(obj, names: bool):
+    active_effect_name = obj.aurora.get_active_effect_name()
+    for effect in obj.aurora.get_effects():
 
         # simple name printing
         if names:
@@ -220,21 +210,17 @@ def ambi_group():
 
 # TODO the additional arguments only work when being run in blocking mode, move them to the config
 @ambi_group.command(name="start", help="Activates the ambilight functionality")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 @click.option("-b", "--block", is_flag=True, default=False, help="Block the shell while running ambi")
-def effects_ambi_start(aurora: str, verbose: bool, block: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
-    AmbilightController(aurora, verbose=verbose).start(blocking=block)
+@click.pass_obj
+def effects_ambi_start(obj, block: bool):
+    AmbilightController(obj.aurora, verbose=obj.verbose).start(blocking=block)
     click.echo("auri ambi started")
 
 
 @ambi_group.command(name="stop", help="Stops the ambilight functionality")
-@click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def effects_ambi_stop(aurora: str, verbose: bool):
-    aurora = DeviceManager(verbose=verbose).get_by_name_or_active(aurora)
-    AmbilightController(aurora, verbose=verbose).stop()
+@click.pass_obj
+def effects_ambi_stop(obj):
+    AmbilightController(obj.aurora, verbose=obj.verbose).stop()
     click.echo("auri ambi stopped")
 
 
@@ -275,11 +261,10 @@ def alfred_command_command(ctx, command: str):
 
 
 @alfred_group.command(name="images", help="Generates image files for each effect")
-@click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
-def alfred_images_command(verbose: bool):
-    manager = DeviceManager(verbose=verbose)
-    manager.generate_image_cache()
-    click.echo(f"Generated images into {manager.image_path}")
+@click.pass_obj
+def alfred_images_command(obj):
+    obj.dm.generate_image_cache()
+    click.echo(f"Generated images into {obj.dm.image_path}")
 
 
 if __name__ == '__main__':
