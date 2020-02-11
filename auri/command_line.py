@@ -32,10 +32,12 @@ class CtxObj:
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use, see `device list`")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 @click.pass_context
-@click.version_option("1.3.1")
+@click.version_option("1.3.2")
 def cli(ctx: CtxObj, aurora: Union[str, None], verbose: bool):
     ctx.obj = CtxObj(aurora, verbose)
 
+
+# GENERAL SETTING COMMANDS
 
 @cli.command(name="on", help="Turn on the active device")
 @click.pass_obj
@@ -48,6 +50,25 @@ def on_command(obj: CtxObj):
 def off_command(obj: CtxObj):
     obj.aurora.on = False
 
+
+@cli.command(name="brighter", help="Make the current effect brighter")
+@click.pass_obj
+def brighter_command(obj: CtxObj):
+    current = obj.aurora.brightness
+    new = min(current + 20, 100)
+    click.echo(f"Brightness {current}->{new}")
+    obj.aurora.brightness = new
+
+
+@cli.command(name="darker", help="Make the current effect darker")
+@click.pass_obj
+def darker_command(obj: CtxObj):
+    current = obj.aurora.brightness
+    new = max(current - 20, 0)
+    click.echo(f"Brightness {current}->{new}")
+    obj.aurora.brightness = new
+
+# EFFECT COMMANDS
 
 @cli.command(name="play", help="Switches the device to a specific effect. Uses spelling correction.")
 @click.argument("name", nargs=-1)
@@ -100,6 +121,8 @@ def list_command(obj: CtxObj, names: bool):
         active = "[X]" if active_effect_name == effect.name else "[ ]"
         click.echo(f"{active} {effect.color_flag_terminal()} {effect.name}")
 
+
+# AMBINANO COMMANDS
 
 @cli.command(name="ambi", help="Toggles the ambilight functionality")
 @click.pass_context
