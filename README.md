@@ -19,7 +19,7 @@ You can switch the currently active device by running `auri device activate <dev
 
 ### Playing and changing effects
 
-Switching effects is done via `auri play`, like `auri play rain`. There is a best-effort spelling correction to find the effect you meant even if you mistype or only provide a part of the effect name - . The most common operations are easily accessible, for example `on`, `off`, `brighter` and `darker` will do exactly what you'd expect. `auri list` will show you all available effects including a small color preview in the terminal.
+Switching effects is done via `auri play`, like `auri play rain`. There is a best-effort spelling correction to find the effect you meant even if you mistype or only provide a part of the effect name. The most common operations are easily accessible, for example `on`, `off`, `brighter` and `darker` will do exactly what you'd expect. `auri list` will show you all available effects including a small color preview in the terminal.
 
 
 ### Ambilight
