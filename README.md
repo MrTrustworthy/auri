@@ -5,37 +5,32 @@ A simple, light-weight tool for controlling multiple Aurora devices from the CLI
 
 ## Usage 
 
+![Auri Gif Sample](https://raw.githubusercontent.com/MrTrustworthy/auri/master/preview.gif)
+
 ### Installation
 
 As it's a Python3-based application, you can install the CLI simply via `pip`. `pip install auri` or `python3 -m pip install auri` (if your default pip is for Python2) are both acceptable ways of installing.
 
-### Device Setup
+### Device management and setup
 
-To find and generate credentials for the Nanoleaf Aurora device in your home, make sure your PC/Laptop is in the same network and run `auri device setup`. Auri will then guide you through the setup for each device it can find.
+To find and generate credentials for the Nanoleaf Aurora device in your home, make sure your PC/Laptop is in the same network and run `auri device setup`. Auri will then guide you through the setup for each device it can find and allow you to set a name for each device in your home. Auri saves the device data and access tokens in a small file in your application config folder, so you only have to do this once. 
 
-You can give each device a name and switch the currently active device by running `auri device activate <device name>`. In general, all commands will only affect the currently active device. If you want a command to apply to a different device, either activate it or target a specific device via adding `-a <device name>` to you command.
+You can switch the currently active device by running `auri device activate <device name>`. In general, all commands will only affect the currently active device. If you want a command to apply to a different device, either `auri device activate` it or target a specific device like `auri -a <device name> play Flames`.
 
-### Basic functionality
+### Playing and changing effects
 
-Switching effects is done via `auri effects`, like `auri effects play rain`. There is a best-effort spelling correction to find the effect you meant even if you mistype or only type a part of the effect name.
+Switching effects is done via `auri play`, like `auri play rain`. There is a best-effort spelling correction to find the effect you meant even if you mistype or only provide a part of the effect name - . The most common operations are easily accessible, for example `on`, `off`, `brighter` and `darker` will do exactly what you'd expect. `auri list` will show you all available effects including a small color preview in the terminal.
 
-Switching brightness and other simple values can be done via ex. `auri effects set brightness 50`. To get the current values, simply use `get` instead of `set`.
-
-The effect list uses terminal colors to show a preview of the effect colors, so `auri effects list` will show you something like this:
-
-![auri_effect_list](https://raw.githubusercontent.com/MrTrustworthy/auri/master/auri_effect_list_terminal.png)
 
 ### Ambilight
 
-There is a built-in ambilight functionality that is based on your primary display. Use `auri effects ambi` to start a blocking shell that will update the effect each seconds. It needs to create a new effect on the device to do so, which will be called `AuriAmbi` so you know what it is.
+There is a built-in ambilight functionality that is based on your primary display. Use `auri ambi` to toggle the _ambi_ mode that will update the effect each seconds. It needs to create a new effect on the device to do so, which will be called `AuriAmbi` so you know what it is.
 
-You can customize the behaviour of the ambilight, just use `auri effects ambi --help` to see which parameters you can play with, though the default settings work quite nice.
-
-The Ambilight functionality only works on MacOS and Windows (untested), but not on Linux due to the dependency on `ImageGrab`. If you're using Linux and know of a way to get this working, feel free to shoot me a PR.
+You can customize the behaviour of the ambilight, just check your config file (see "Device management and setup") to see which parameters you can play with, though the default settings should work quite nicely without any tuning. The Ambilight functionality only works on MacOS and Windows, but not on Linux due to the dependency on `ImageGrab`. If you're using Linux and know of a way to get this working, feel free to shoot me a PR.
 
 ### Alfred Integration
 
-If you're on MacOS, you can also use this CLI to easily build a [Alfred](https://www.alfredapp.com/) workflow to change effects. Simply run `auri device images` to generate some preview images for all your effects, then create a simple workflow that has `auri alfred prompt` as a script filter and pipes the result to `auri alfred command` as a "run script" action.
+If you're on MacOS, you can also use this CLI to easily build a [Alfred](https://www.alfredapp.com/) workflow to change effects and have preview images for each effect in your search bar. Simply run `auri alfred images` to generate some preview images for all your effects, then create a simple workflow that has `auri alfred prompt` as a script filter and pipes the result to `auri alfred command` as a "run script" action.
 
 ## Contributing
 
