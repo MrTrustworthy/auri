@@ -11,6 +11,8 @@ import psutil
 from auri.ambilight import AnyDict, Ambilight
 from auri.aurora import Aurora
 
+AMBILIGHT_EFFECT_NAME = "AuriAmbi"
+
 SETTING_TEMPLATE: AnyDict = {
     "config": {
         "delay": 1,  # how long to pause between re-applying the current desktop image
@@ -23,7 +25,7 @@ SETTING_TEMPLATE: AnyDict = {
     },
     "effect_template": {
         "command": "add",
-        "animName": "AuriAmbi",
+        "animName": AMBILIGHT_EFFECT_NAME,
         "animType": "random",
         "colorType": "HSB",
         "animData": None,
@@ -49,7 +51,7 @@ ENV_SETTINGS_PATH = "AURI_SETTINGS_PATH"
 DEFAULT_SETTINGS_PATH = "~/.config/auri/ambi.json"
 
 # Whenever the name/call-path of this command changes, this also has to be adjusted :(
-AMBI_CALL_ARGS = "auri ambi start -b"
+AMBI_CALL_ARGS = "auri ambi -b"
 
 
 class AmbilightController:
@@ -60,6 +62,10 @@ class AmbilightController:
         self.verbose = verbose
         self.settings = self._load_settings()
         self.ambilight = Ambilight(aurora, self.settings["config"], self.settings["effect_template"], verbose=verbose)
+
+    @property
+    def is_running(self) -> bool:
+        return len(self.find_auri_processes()) > 0
 
     def start(self, blocking: bool):
         """Starts a new process that calls itself in blocking mode as a separate process"""

@@ -7,19 +7,19 @@ echo "Trying device activate My Nanoleaf"
 python auri/command_line.py device activate "My Nanoleaf"
 echo "Trying device list"
 python auri/command_line.py device list
-echo "Trying device on"
-python auri/command_line.py device on
-echo "Trying device off"
-python auri/command_line.py device off
-echo "Trying effects list"
-python auri/command_line.py effects list
-echo "Trying effects play vint"
-python auri/command_line.py effects play vint
-echo "Trying effects get name"
-python auri/command_line.py effects get name
-echo "Trying ambi start"
-python auri/command_line.py ambi start
-echo "Trying ambi stop"
-python auri/command_line.py ambi stop
-echo "Trying -v -a My Nanoleaf effects play vint"
-python auri/command_line.py -v -a "My Nanoleaf" effects play vint
+echo "Trying on"
+python auri/command_line.py on
+echo "Trying off"
+python auri/command_line.py off
+echo "Trying device identify"
+python auri/command_line.py device identify
+echo "Trying list"
+python auri/command_line.py list
+echo "Trying play vintage"
+python auri/command_line.py play vintage
+echo "Trying ambi toggle to start"
+python auri/command_line.py ambi
+echo "Trying ambi toggle to stop"
+python auri/command_line.py ambi
+echo "Trying -v -a My Nanoleaf play rain"
+python auri/command_line.py -v -a "My Nanoleaf" play rain
