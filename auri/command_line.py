@@ -32,7 +32,7 @@ class CtxObj:
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use, see `device list`")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 @click.pass_context
-@click.version_option("1.3.0")
+@click.version_option("1.3.1")
 def cli(ctx: CtxObj, aurora: Union[str, None], verbose: bool):
     ctx.obj = CtxObj(aurora, verbose)
 
@@ -55,7 +55,6 @@ def off_command(obj: CtxObj):
 def play_command(obj: CtxObj, name: str):
     effect_name = " ".join(name)
     closest = get_close_matches(effect_name, obj.aurora.get_effect_names(), n=1, cutoff=0)
-    click.echo(f"Finding effect named {effect_name}")
     if len(closest) == 0:
         # As long as there is a single effect, this should not happen
         click.echo(f"Did not find anything similar to {effect_name}, are there no effects on this device?")
@@ -103,19 +102,29 @@ def list_command(obj: CtxObj, names: bool):
 
 
 @cli.command(name="ambi", help="Toggles the ambilight functionality")
-@click.option("-b", "--block", is_flag=True, default=False, help="Block the shell while running ambi")
 @click.pass_context
-def ambi(ctx: click.Context, block: bool):
+def ambi(ctx: click.Context):
     ambi_controller = AmbilightController(ctx.obj.aurora, verbose=ctx.obj.verbose)
 
     if not ambi_controller.is_running:
-        ambi_controller.start(blocking=block)
+        ambi_controller.start()
         click.echo("auri ambi started")
         return
 
     ambi_controller.stop()
     ctx.forward(off_command)
     click.echo("auri ambi stopped")
+
+
+@cli.command(name="ambi-blocking", help="Toggles the ambilight functionality", hidden=True)
+@click.pass_obj
+def ambi_blocking(obj: CtxObj):
+    """This is used to start the ambi in blocking mode
+
+    Not exposed to the user, it needs to match ambilight_controller.AMBI_CALL_ARGS to identify the process
+    """
+    ambi_controller = AmbilightController(obj.aurora, verbose=obj.verbose)
+    ambi_controller.start_blocking()
 
 
 # DEVICE AND CONTEXT MANAGEMENT

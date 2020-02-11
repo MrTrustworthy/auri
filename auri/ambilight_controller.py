@@ -51,7 +51,7 @@ ENV_SETTINGS_PATH = "AURI_SETTINGS_PATH"
 DEFAULT_SETTINGS_PATH = "~/.config/auri/ambi.json"
 
 # Whenever the name/call-path of this command changes, this also has to be adjusted :(
-AMBI_CALL_ARGS = "auri ambi -b"
+AMBI_CALL_ARGS = "auri ambi-blocking"
 
 
 class AmbilightController:
@@ -67,13 +67,8 @@ class AmbilightController:
     def is_running(self) -> bool:
         return len(self.find_auri_processes()) > 0
 
-    def start(self, blocking: bool):
-        """Starts a new process that calls itself in blocking mode as a separate process"""
-        if blocking:
-            self.ambilight.run_ambi_loop()
-            click.echo("auri ambi started in blocking mode")
-            return
-
+    def start(self):
+        """Starts a new process that calls start_blocking() mode as a separate process"""
         # in case anyone tries to start it twice, run `stop()` before to be safe (which is idempotent)
         self.stop()
 
@@ -85,6 +80,10 @@ class AmbilightController:
             stderr=subprocess.STDOUT,
             close_fds=True,
         )
+
+    def start_blocking(self):
+        self.ambilight.run_ambi_loop()
+        click.echo("auri ambi started in blocking mode")
 
     def stop(self):
         """Stop a running ambi process. If none is found, will do nothing. This is safe to call at any time"""
