@@ -11,6 +11,8 @@ A simple, light-weight tool for controlling multiple Aurora devices from the CLI
 
 As it's a Python3-based application, you can install the CLI simply via `pip`. `pip install auri` or `python3 -m pip install auri` (if your default pip is for Python2) are both acceptable ways of installing.
 
+Please note that only Python >= 3.6 is supported due to [Pillows version constraints](https://pillow.readthedocs.io/en/latest/installation.html#python-support), though you're of course free to clone, downgrade the dependency in `requirements.txt`, and install it manually if you need to run it on older versions.
+
 ### Device management and setup
 
 To find and generate credentials for the Nanoleaf Aurora device in your home, make sure your PC/Laptop is in the same network and run `auri device setup`. Auri will then guide you through the setup for each device it can find and allow you to set a name for each device in your home. Auri saves the device data and access tokens in a small file in your application config folder, so you only have to do this once. 

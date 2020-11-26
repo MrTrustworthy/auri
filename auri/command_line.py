@@ -32,7 +32,7 @@ class CtxObj:
 @click.option("-a", "--aurora", default=None, help="Which Nanoleaf to use, see `device list`")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="More Logging")
 @click.pass_context
-@click.version_option("1.3.6")
+@click.version_option("1.4.0")
 def cli(ctx: CtxObj, aurora: Union[str, None], verbose: bool):
     ctx.obj = CtxObj(aurora, verbose)
 
